@@ -25,13 +25,13 @@ func main() {
 	r.HandleFunc("/", controllers.HomeHandler).Methods("GET")
 	r.HandleFunc("/register", controllers.RegisterViewHandler).Methods("GET")
 	r.HandleFunc("/login", controllers.LoginViewHandler).Methods("GET")
-	
+
 	// Protected view routes
 	protected := r.PathPrefix("").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/threads/create", controllers.CreateThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/threads/{id}/edit", controllers.EditThreadViewHandler).Methods("GET")
-	
+
 	// Admin routes
 	admin := r.PathPrefix("/admin").Subrouter()
 	admin.Use(middleware.AuthMiddleware, middleware.AdminMiddleware)
@@ -42,7 +42,7 @@ func main() {
 
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
-	
+
 	// Auth API
 	api.HandleFunc("/register", controllers.RegisterHandler).Methods("POST")
 	api.HandleFunc("/login", controllers.LoginHandler).Methods("POST")
@@ -51,12 +51,12 @@ func main() {
 	// Protected API routes
 	apiProtected := api.PathPrefix("").Subrouter()
 	apiProtected.Use(middleware.AuthMiddleware)
-	
+
 	// Thread API
 	apiProtected.HandleFunc("/threads", controllers.CreateThreadHandler).Methods("POST")
 	apiProtected.HandleFunc("/threads/{id}", controllers.UpdateThreadHandler).Methods("PUT")
 	apiProtected.HandleFunc("/threads/{id}", controllers.DeleteThreadHandler).Methods("DELETE")
-	
+
 	// Message API
 	apiProtected.HandleFunc("/threads/{id}/messages", controllers.CreateMessageHandler).Methods("POST")
 	apiProtected.HandleFunc("/messages/{id}", controllers.DeleteMessageHandler).Methods("DELETE")

@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -54,7 +55,10 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		"Filters":    filters,
 		"User":       user,
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +120,10 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 		"User":       user,
 		"SortBy":     sortBy,
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +137,10 @@ func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 		"Tags":  tags,
 		"User":  user,
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func EditThreadViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +179,10 @@ func EditThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 		"Tags":   tags,
 		"User":   user,
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func GetThreadsHandler(w http.ResponseWriter, r *http.Request) {

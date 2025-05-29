@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -14,13 +15,13 @@ import (
 
 func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUserFromContext(r)
-	
+
 	// Get some statistics
 	threadFilters := models.ThreadFilters{Limit: 0} // Get all threads
 	threads, totalThreads, _ := models.GetThreads(threadFilters)
-	
+
 	totalMessages, _ := models.GetMessageCount()
-	
+
 	// Get recent threads
 	recentThreadFilters := models.ThreadFilters{Limit: 10, Page: 1}
 	recentThreads, _, _ := models.GetThreads(recentThreadFilters)
@@ -35,7 +36,10 @@ func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 		"RecentThreads": recentThreads,
 		"Threads":       threads,
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func BanUserHandler(w http.ResponseWriter, r *http.Request) {

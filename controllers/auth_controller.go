@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 
 	"goforum/models"
@@ -15,7 +16,10 @@ func RegisterViewHandler(w http.ResponseWriter, r *http.Request) {
 		"Title": "Register - GoForum",
 		"Page":  "register",
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func LoginViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +28,10 @@ func LoginViewHandler(w http.ResponseWriter, r *http.Request) {
 		"Title": "Login - GoForum",
 		"Page":  "login",
 	}
-	tmpl.Execute(w, data)
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
