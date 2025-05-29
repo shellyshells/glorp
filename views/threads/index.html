@@ -1,0 +1,165 @@
+{{define "content"}}
+<div class="forum-container">
+    <div class="forum-sidebar">
+        <div class="sidebar-section">
+            <h3><i class="fas fa-tags"></i> Categories</h3>
+            <div class="tag-list">
+                <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
+                    <i class="fas fa-home"></i> All Threads
+                </a>
+                {{range .Tags}}
+                <a href="/?tag={{.Name}}" class="tag-item {{if eq $.Filters.TagName .Name}}active{{end}}">
+                    <i class="fas fa-hashtag"></i> {{.Name}}
+                </a>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <div class="forum-main">
+        <div class="forum-header">
+            <div class="forum-title">
+                <h1>
+                    {{if .Filters.TagName}}
+                        <i class="fas fa-hashtag"></i> {{.Filters.TagName}}
+                    {{else if .Filters.Search}}
+                        <i class="fas fa-search"></i> Search: "{{.Filters.Search}}"
+                    {{else}}
+                        <i class="fas fa-comments"></i> All Discussions
+                    {{end}}
+                </h1>
+                <p>{{.Pagination.TotalItems}} threads found</p>
+            </div>
+            
+            {{if .User}}
+            <div class="forum-actions">
+                <a href="/threads/create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Thread
+                </a>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="thread-filters">
+            <div class="filter-group">
+                <label>Show:</label>
+                <select id="limit-select" onchange="updateLimit(this.value)">
+                    <option value="10" {{if eq .Pagination.ItemsPerPage 10}}selected{{end}}>10 per page</option>
+                    <option value="20" {{if eq .Pagination.ItemsPerPage 20}}selected{{end}}>20 per page</option>
+                    <option value="30" {{if eq .Pagination.ItemsPerPage 30}}selected{{end}}>30 per page</option>
+                    <option value="all" {{if eq .Pagination.ItemsPerPage 0}}selected{{end}}>Show all</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="thread-list">
+            {{if .Threads}}
+                {{range .Threads}}
+                <div class="thread-item">
+                    <div class="thread-icon">
+                        {{if eq .Status "closed"}}
+                            <i class="fas fa-lock text-warning"></i>
+                        {{else}}
+                            <i class="fas fa-comment text-primary"></i>
+                        {{end}}
+                    </div>
+                    
+                    <div class="thread-content">
+                        <div class="thread-header">
+                            <h3><a href="/threads/{{.ID}}" class="thread-title">{{.Title}}</a></h3>
+                            <div class="thread-meta">
+                                <span class="thread-author">
+                                    <i class="fas fa-user"></i> {{.Author.Username}}
+                                </span>
+                                <span class="thread-date">
+                                    <i class="fas fa-clock"></i> {{.CreatedAt.Format "Jan 02, 2006 15:04"}}
+                                </span>
+                                {{if eq .Status "closed"}}
+                                    <span class="thread-status closed">
+                                        <i class="fas fa-lock"></i> Closed
+                                    </span>
+                                {{end}}
+                            </div>
+                        </div>
+                        
+                        <p class="thread-description">{{.Description}}</p>
+                        
+                        <div class="thread-tags">
+                            {{range .Tags}}
+                            <a href="/?tag={{.Name}}" class="thread-tag">
+                                <i class="fas fa-hashtag"></i>{{.Name}}
+                            </a>
+                            {{end}}
+                        </div>
+                    </div>
+                    
+                    <div class="thread-stats">
+                        <div class="stat">
+                            <i class="fas fa-comments"></i>
+                            <span>{{.MessageCount}}</span>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            {{else}}
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <h3>No threads found</h3>
+                    <p>
+                        {{if .Filters.Search}}
+                            No threads match your search criteria.
+                        {{else if .Filters.TagName}}
+                            No threads in this category yet.
+                        {{else}}
+                            No threads have been created yet.
+                        {{end}}
+                    </p>
+                    {{if .User}}
+                        <a href="/threads/create" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create the first thread
+                        </a>
+                    {{end}}
+                </div>
+            {{end}}
+        </div>
+
+        {{if gt .Pagination.TotalPages 1}}
+        <div class="pagination">
+            {{if .Pagination.HasPrev}}
+                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            {{end}}
+            
+            <span class="pagination-info">
+                Page {{.Pagination.CurrentPage}} of {{.Pagination.TotalPages}}
+            </span>
+            
+            {{if .Pagination.HasNext}}
+                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<script>
+function updateLimit(limit) {
+    const url = new URL(window.location);
+    url.searchParams.set('limit', limit);
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+}
+
+// Template helper functions for pagination
+function sub(a, b) {
+    return a - b;
+}
+
+function add(a, b) {
+    return a + b;
+}
+</script>
+{{end}}

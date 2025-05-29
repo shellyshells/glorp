@@ -1,0 +1,312 @@
+
+{{define "content"}}
+<div class="thread-container">
+    <div class="thread-header">
+        <div class="thread-title-section">
+            <h1>{{.Thread.Title}}</h1>
+            <div class="thread-meta">
+                <span class="thread-author">
+                    <i class="fas fa-user"></i> {{.Thread.Author.Username}}
+                </span>
+                <span class="thread-date">
+                    <i class="fas fa-clock"></i> {{.Thread.CreatedAt.Format "Jan 02, 2006 15:04"}}
+                </span>
+                {{if eq .Thread.Status "closed"}}
+                    <span class="thread-status closed">
+                        <i class="fas fa-lock"></i> Closed
+                    </span>
+                {{end}}
+            </div>
+            <div class="thread-tags">
+                {{range .Thread.Tags}}
+                <a href="/?tag={{.Name}}" class="thread-tag">
+                    <i class="fas fa-hashtag"></i>{{.Name}}
+                </a>
+                {{end}}
+            </div>
+        </div>
+        
+        <div class="thread-actions">
+            <a href="/" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Forum
+            </a>
+            {{if .User}}
+                {{if or (eq .User.ID .Thread.AuthorID) (eq .User.Role "admin")}}
+                    <a href="/threads/{{.Thread.ID}}/edit" class="btn btn-outline">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <button onclick="deleteThread('{{.Thread.ID}}')" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                {{end}}
+            {{end}}
+        </div>
+    </div>
+
+    <div class="thread-description">
+        <p>{{.Thread.Description}}</p>
+    </div>
+
+    <div class="messages-section">
+        <div class="messages-header">
+            <h2><i class="fas fa-comments"></i> Messages</h2>
+            <div class="message-controls">
+                <div class="sort-controls">
+                    <label>Sort by:</label>
+                    <select id="sort-select" onchange="updateSort(this.value)">
+                        <option value="date" {{if eq .SortBy "date"}}selected{{end}}>Date (Oldest First)</option>
+                        <option value="popularity" {{if eq .SortBy "popularity"}}selected{{end}}>Popularity</option>
+                    </select>
+                </div>
+                <div class="limit-controls">
+                    <label>Show:</label>
+                    <select id="limit-select" onchange="updateLimit(this.value)">
+                        <option value="10" {{if eq .Pagination.ItemsPerPage 10}}selected{{end}}>10 per page</option>
+                        <option value="20" {{if eq .Pagination.ItemsPerPage 20}}selected{{end}}>20 per page</option>
+                        <option value="30" {{if eq .Pagination.ItemsPerPage 30}}selected{{end}}>30 per page</option>
+                        <option value="all" {{if eq .Pagination.ItemsPerPage 0}}selected{{end}}>Show all</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {{if .User}}
+            {{if ne .Thread.Status "closed"}}
+            <div class="message-form-container">
+                <form id="message-form" class="message-form">
+                    <div class="form-group">
+                        <label for="message-content">Post a message:</label>
+                        <textarea id="message-content" name="content" rows="4" placeholder="Write your message here..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Post Message
+                        </button>
+                    </div>
+                    <div id="message-error" class="error-message" style="display: none;"></div>
+                </form>
+            </div>
+            {{else}}
+                <div class="closed-notice">
+                    <i class="fas fa-lock"></i> This thread is closed and no longer accepts new messages.
+                </div>
+            {{end}}
+        {{else}}
+            <div class="login-prompt">
+                <p><a href="/login">Login</a> or <a href="/register">register</a> to post messages.</p>
+            </div>
+        {{end}}
+
+        <div class="message-list">
+            {{if .Messages}}
+                {{range .Messages}}
+                <div class="message-item" data-message-id="{{.ID}}">
+                    <div class="message-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <span class="author-name">{{.Author.Username}}</span>
+                            <span class="message-date">{{.CreatedAt.Format "Jan 02, 2006 15:04"}}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="message-content">
+                        <p>{{.Content}}</p>
+                    </div>
+                    
+                    <div class="message-actions">
+                        <div class="vote-controls">
+                            {{if $.User}}
+                                <button class="vote-btn {{if eq .UserVote 1}}active{{end}}" onclick="voteMessage('{{.ID}}', 1)">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span class="vote-count">{{.Likes}}</span>
+                                </button>
+                                <button class="vote-btn {{if eq .UserVote -1}}active{{end}}" onclick="voteMessage('{{.ID}}', -1)">
+                                    <i class="fas fa-thumbs-down"></i>
+                                    <span class="vote-count">{{.Dislikes}}</span>
+                                </button>
+                            {{else}}
+                                <span class="vote-display">
+                                    <i class="fas fa-thumbs-up"></i> {{.Likes}}
+                                    <i class="fas fa-thumbs-down"></i> {{.Dislikes}}
+                                </span>
+                            {{end}}
+                            <span class="score">Score: {{.Score}}</span>
+                        </div>
+                        
+                        {{if $.User}}
+                            {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
+                            <div class="message-admin-controls">
+                                <button onclick="deleteMessage('{{.ID}}')" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                            {{end}}
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
+            {{else}}
+                <div class="empty-messages">
+                    <i class="fas fa-comment-slash"></i>
+                    <h3>No messages yet</h3>
+                    <p>Be the first to share your thoughts!</p>
+                </div>
+            {{end}}
+        </div>
+
+        {{if gt .Pagination.TotalPages 1}}
+        <div class="pagination">
+            {{if .Pagination.HasPrev}}
+                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .SortBy}}&sort={{.SortBy}}{{end}}" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            {{end}}
+            
+            <span class="pagination-info">
+                Page {{.Pagination.CurrentPage}} of {{.Pagination.TotalPages}}
+            </span>
+            
+            {{if .Pagination.HasNext}}
+                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .SortBy}}&sort={{.SortBy}}{{end}}" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<script>
+// Post message functionality
+document.getElementById('message-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const content = formData.get('content');
+    const errorDiv = document.getElementById('message-error');
+    
+    try {
+        const response = await fetch(`/api/threads/{{.Thread.ID}}/messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content })
+        });
+        
+        if (response.ok) {
+            location.reload(); // Refresh to show new message
+        } else {
+            const result = await response.text();
+            errorDiv.textContent = result;
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Failed to post message. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+});
+
+// Vote message functionality
+async function voteMessage(messageId, voteType) {
+    try {
+        const response = await fetch(`/api/messages/${messageId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vote_type: voteType })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            // Update vote counts in the UI
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            const voteButtons = messageElement.querySelectorAll('.vote-btn');
+            const likesBtn = voteButtons[0];
+            const dislikesBtn = voteButtons[1];
+            const scoreSpan = messageElement.querySelector('.score');
+            
+            // Update counts
+            likesBtn.querySelector('.vote-count').textContent = result.likes;
+            dislikesBtn.querySelector('.vote-count').textContent = result.dislikes;
+            scoreSpan.textContent = `Score: ${result.score}`;
+            
+            // Update active states
+            likesBtn.classList.toggle('active', result.user_vote === 1);
+            dislikesBtn.classList.toggle('active', result.user_vote === -1);
+        } else {
+            const result = await response.text();
+            alert(result);
+        }
+    } catch (error) {
+        alert('Failed to vote. Please try again.');
+    }
+}
+
+// Delete message functionality
+async function deleteMessage(messageId) {
+    if (!confirm('Are you sure you want to delete this message?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/messages/${messageId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            location.reload(); // Refresh to remove deleted message
+        } else {
+            const result = await response.text();
+            alert(result);
+        }
+    } catch (error) {
+        alert('Failed to delete message. Please try again.');
+    }
+}
+
+// Delete thread functionality
+async function deleteThread(threadId) {
+    if (!confirm('Are you sure you want to delete this entire thread? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/threads/${threadId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            window.location.href = '/'; // Redirect to home
+        } else {
+            const result = await response.text();
+            alert(result);
+        }
+    } catch (error) {
+        alert('Failed to delete thread. Please try again.');
+    }
+}
+
+// Sort and limit controls
+function updateSort(sortBy) {
+    const url = new URL(window.location);
+    url.searchParams.set('sort', sortBy);
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+}
+
+function updateLimit(limit) {
+    const url = new URL(window.location);
+    url.searchParams.set('limit', limit);
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+}
+
+// Helper functions for template
+function sub(a, b) { return a - b; }
+function add(a, b) { return a + b; }
+</script>
+{{end}}

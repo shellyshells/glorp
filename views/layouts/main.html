@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/" class="nav-logo">
+                    <i class="fas fa-comments"></i>
+                    GoForum
+                </a>
+            </div>
+            
+            <div class="nav-search">
+                <form id="search-form" class="search-form">
+                    <input type="text" id="search-input" placeholder="Search threads..." name="q" value="{{.Filters.Search}}">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
+            </div>
+
+            <div class="nav-menu">
+                {{if .User}}
+                    <a href="/threads/create" class="nav-link">
+                        <i class="fas fa-plus"></i> New Thread
+                    </a>
+                    {{if eq .User.Role "admin"}}
+                        <a href="/admin/dashboard" class="nav-link">
+                            <i class="fas fa-cog"></i> Admin
+                        </a>
+                    {{end}}
+                    <div class="nav-user">
+                        <span class="nav-username">{{.User.Username}}</span>
+                        <button id="logout-btn" class="btn btn-sm btn-outline">Logout</button>
+                    </div>
+                {{else}}
+                    <a href="/login" class="nav-link">Login</a>
+                    <a href="/register" class="nav-link">Register</a>
+                {{end}}
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {{template "content" .}}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2024 GoForum. Built with Go and passion.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

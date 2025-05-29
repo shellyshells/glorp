@@ -1,0 +1,48 @@
+{{define "pagination"}}
+{{if gt .TotalPages 1}}
+<div class="pagination-container">
+    <div class="pagination">
+        {{if .HasPrev}}
+            <a href="{{.PrevURL}}" class="pagination-btn pagination-prev">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+        {{end}}
+        
+        <div class="pagination-info">
+            <span class="pagination-text">
+                Page {{.CurrentPage}} of {{.TotalPages}}
+            </span>
+            <span class="pagination-total">
+                ({{.TotalItems}} total items)
+            </span>
+        </div>
+        
+        {{if .HasNext}}
+            <a href="{{.NextURL}}" class="pagination-btn pagination-next">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+        {{end}}
+    </div>
+    
+    {{if .ShowJumpToPage}}
+    <div class="pagination-jump">
+        <form class="jump-form" onsubmit="jumpToPage(event)">
+            <label for="page-jump">Go to page:</label>
+            <input type="number" id="page-jump" min="1" max="{{.TotalPages}}" value="{{.CurrentPage}}">
+            <button type="submit" class="btn btn-sm btn-outline">Go</button>
+        </form>
+    </div>
+    {{end}}
+</div>
+
+<script>
+function jumpToPage(event) {
+    event.preventDefault();
+    const pageNum = document.getElementById('page-jump').value;
+    const url = new URL(window.location);
+    url.searchParams.set('page', pageNum);
+    window.location.href = url.toString();
+}
+</script>
+{{end}}
+{{end}}

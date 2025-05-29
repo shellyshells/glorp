@@ -1,0 +1,22 @@
+{{define "header"}}
+<header class="forum-header-section">
+    <div class="header-content">
+        <div class="header-left">
+            <h1 class="page-title">{{.Title}}</h1>
+            {{if .Subtitle}}
+                <p class="page-subtitle">{{.Subtitle}}</p>
+            {{end}}
+        </div>
+        <div class="header-right">
+            {{if .HeaderActions}}
+                {{range .HeaderActions}}
+                    <a href="{{.URL}}" class="btn {{.Class}}">
+                        {{if .Icon}}<i class="{{.Icon}}"></i>{{end}}
+                        {{.Text}}
+                    </a>
+                {{end}}
+            {{end}}
+        </div>
+    </div>
+</header>
+{{end}}
