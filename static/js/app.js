@@ -1,10 +1,15 @@
-// Global JavaScript functionality for GoForum
+// Enhanced JavaScript functionality for GoForum
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all functionality
     initializeNavigation();
     initializeSearch();
     initializeLogout();
+    initializeNotifications();
+    initializeKeyboardShortcuts();
+    
+    // Initialize any vote buttons
+    initializeVoting();
 });
 
 // Navigation functionality
@@ -18,9 +23,19 @@ function initializeNavigation() {
             navMenu.classList.toggle('active');
         });
     }
+
+    // Active page highlighting
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
 }
 
-// Search functionality
+// Enhanced search functionality
 function initializeSearch() {
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
@@ -45,16 +60,35 @@ function initializeSearch() {
                 searchForm.dispatchEvent(new Event('submit'));
             }
         });
+
+        // Search suggestions (placeholder for future enhancement)
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    // You could implement search suggestions here
+                    // fetchSearchSuggestions(query);
+                }, 300);
+            }
+        });
     }
 }
 
-// Logout functionality
+// Enhanced logout functionality
 function initializeLogout() {
     const logoutBtn = document.getElementById('logout-btn');
     
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async function(e) {
             e.preventDefault();
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+            this.disabled = true;
             
             try {
                 const response = await fetch('/api/logout', {
@@ -65,29 +99,110 @@ function initializeLogout() {
                 });
                 
                 if (response.ok) {
-                    window.location.href = '/';
+                    showNotification('Logged out successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
                 } else {
                     console.error('Logout failed');
-                    // Force redirect anyway
-                    window.location.href = '/';
+                    showNotification('Logout failed, redirecting anyway...', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                // Force redirect anyway
-                window.location.href = '/';
+                showNotification('Network error, redirecting...', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            } finally {
+                // Reset button state
+                this.innerHTML = originalText;
+                this.disabled = false;
             }
         });
     }
 }
 
-// Utility function to show notifications
-function showNotification(message, type = 'info') {
+// Initialize voting functionality
+function initializeVoting() {
+    // Add event listeners to vote buttons
+    document.querySelectorAll('.vote-arrow, .comment-vote-btn').forEach(button => {
+        if (!button.onclick && !button.href) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                showNotification('Please log in to vote', 'info');
+            });
+        }
+    });
+}
+
+// Keyboard shortcuts
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Only trigger shortcuts when not typing in input fields
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        switch(e.key) {
+            case 'c':
+                // 'c' to create new post
+                if (document.querySelector('.btn-create')) {
+                    window.location.href = '/threads/create';
+                }
+                break;
+            case 'h':
+                // 'h' to go home
+                window.location.href = '/';
+                break;
+            case '/':
+                // '/' to focus search
+                e.preventDefault();
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+                break;
+            case 'Escape':
+                // Escape to close modals
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+                break;
+        }
+    });
+}
+
+// Enhanced notification system
+function initializeNotifications() {
+    // Check for URL parameters that might indicate messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const success = urlParams.get('success');
+    
+    if (error === 'banned') {
+        showNotification('Your account has been banned', 'error');
+    } else if (success === 'registered') {
+        showNotification('Registration successful! Welcome to GoForum!', 'success');
+    }
+}
+
+// Enhanced notification function
+function showNotification(message, type = 'info', duration = 5000) {
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
-        <span>${message}</span>
-        <button class="notification-close">&times;</button>
+        <div class="notification-content">
+            <i class="notification-icon ${getNotificationIcon(type)}"></i>
+            <span class="notification-message">${message}</span>
+            <button class="notification-close" onclick="removeNotification(this.parentElement)">&times;</button>
+        </div>
     `;
     
     // Add styles
@@ -95,58 +210,96 @@ function showNotification(message, type = 'info') {
         position: fixed;
         top: 80px;
         right: 20px;
-        padding: 15px 20px;
-        border-radius: 4px;
+        padding: 16px 20px;
+        border-radius: 8px;
         color: white;
         font-weight: 500;
         z-index: 10000;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         max-width: 400px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         animation: slideIn 0.3s ease-out;
+        backdrop-filter: blur(10px);
     `;
     
     // Set background color based on type
     switch (type) {
         case 'success':
-            notification.style.backgroundColor = '#28a745';
+            notification.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
             break;
         case 'error':
-            notification.style.backgroundColor = '#dc3545';
+            notification.style.background = 'linear-gradient(135deg, #dc3545, #fd7e14)';
             break;
         case 'warning':
-            notification.style.backgroundColor = '#ffc107';
+            notification.style.background = 'linear-gradient(135deg, #ffc107, #fd7e14)';
             notification.style.color = '#000';
             break;
+        case 'info':
         default:
-            notification.style.backgroundColor = '#0079d3';
+            notification.style.background = 'linear-gradient(135deg, #0079d3, #00a8ff)';
     }
     
-    // Add close button functionality
+    // Style the content
+    const content = notification.querySelector('.notification-content');
+    content.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    `;
+    
+    // Style the close button
     const closeBtn = notification.querySelector('.notification-close');
     closeBtn.style.cssText = `
         background: none;
         border: none;
         color: inherit;
-        font-size: 18px;
+        font-size: 20px;
         cursor: pointer;
         padding: 0;
-        margin-left: 10px;
+        margin-left: auto;
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
     `;
     
-    closeBtn.addEventListener('click', function() {
-        removeNotification(notification);
+    closeBtn.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = 'rgba(255,255,255,0.2)';
+    });
+    
+    closeBtn.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = 'transparent';
     });
     
     // Add to page
     document.body.appendChild(notification);
     
-    // Auto-remove after 5 seconds
-    setTimeout(function() {
-        removeNotification(notification);
-    }, 5000);
+    // Auto-remove after duration
+    if (duration > 0) {
+        setTimeout(function() {
+            removeNotification(notification);
+        }, duration);
+    }
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success':
+            return 'fas fa-check-circle';
+        case 'error':
+            return 'fas fa-exclamation-circle';
+        case 'warning':
+            return 'fas fa-exclamation-triangle';
+        case 'info':
+        default:
+            return 'fas fa-info-circle';
+    }
 }
 
 function removeNotification(notification) {
@@ -160,33 +313,6 @@ function removeNotification(notification) {
     }
 }
 
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
-
 // Utility function to format dates
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -194,8 +320,16 @@ function formatDate(dateString) {
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) {
-        return 'Yesterday';
+    if (diffTime < 60000) {
+        return 'just now';
+    } else if (diffTime < 3600000) {
+        const minutes = Math.floor(diffTime / 60000);
+        return `${minutes}m ago`;
+    } else if (diffTime < 86400000) {
+        const hours = Math.floor(diffTime / 3600000);
+        return `${hours}h ago`;
+    } else if (diffDays === 1) {
+        return 'yesterday';
     } else if (diffDays < 7) {
         return `${diffDays} days ago`;
     } else {
@@ -224,15 +358,108 @@ function validateForm(formElement) {
     let isValid = true;
     
     inputs.forEach(input => {
-        if (!input.value.trim()) {
-            input.classList.add('error');
+        const value = input.value.trim();
+        
+        if (!value) {
+            addFieldError(input, 'This field is required');
             isValid = false;
         } else {
-            input.classList.remove('error');
+            removeFieldError(input);
+            
+            // Additional validation based on type
+            if (input.type === 'email' && !isValidEmail(value)) {
+                addFieldError(input, 'Please enter a valid email address');
+                isValid = false;
+            } else if (input.type === 'password' && !isValidPassword(value)) {
+                addFieldError(input, 'Password must be at least 12 characters with 1 uppercase and 1 special character');
+                isValid = false;
+            }
         }
     });
     
     return isValid;
+}
+
+function addFieldError(input, message) {
+    input.classList.add('error');
+    
+    // Remove existing error message
+    const existingError = input.parentNode.querySelector('.field-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    input.parentNode.appendChild(errorDiv);
+}
+
+function removeFieldError(input) {
+    input.classList.remove('error');
+    const errorDiv = input.parentNode.querySelector('.field-error');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function isValidPassword(password) {
+    return password.length >= 12 && 
+           /[A-Z]/.test(password) && 
+           /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+}
+
+// Enhanced copy to clipboard function
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+        }
+        showNotification('Copied to clipboard!', 'success');
+        return true;
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        showNotification('Failed to copy to clipboard', 'error');
+        return false;
+    }
+}
+
+// Lazy loading for images (if needed)
+function initializeLazyLoading() {
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    imageObserver.unobserve(img);
+                }
+            });
+        });
+
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
 }
 
 // Add error styling
@@ -241,6 +468,30 @@ errorStyle.textContent = `
     .error {
         border-color: #dc3545 !important;
         box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
+    }
+    
+    .field-error {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    }
+    
+    .notification-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+    
+    .notification-message {
+        flex: 1;
+        word-wrap: break-word;
     }
 `;
 document.head.appendChild(errorStyle);
@@ -251,5 +502,70 @@ window.GoForum = {
     formatDate,
     truncateText,
     escapeHtml,
-    validateForm
+    validateForm,
+    copyToClipboard,
+    removeNotification
 };
+
+// Add CSS animations if not already present
+if (!document.querySelector('#goforum-animations')) {
+    const animationStyle = document.createElement('style');
+    animationStyle.id = 'goforum-animations';
+    animationStyle.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-out;
+        }
+    `;
+    document.head.appendChild(animationStyle);
+}

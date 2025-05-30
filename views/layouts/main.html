@@ -19,15 +19,15 @@
             
             <div class="nav-search">
                 <form id="search-form" class="search-form">
-                    <input type="text" id="search-input" placeholder="Search threads..." name="q" value="{{.Filters.Search}}">
+                    <input type="text" id="search-input" placeholder="Search threads..." name="q" value="{{if .Filters}}{{.Filters.Search}}{{end}}">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
             </div>
 
             <div class="nav-menu">
                 {{if .User}}
-                    <a href="/threads/create" class="nav-link">
-                        <i class="fas fa-plus"></i> New Thread
+                    <a href="/threads/create" class="nav-link btn-create">
+                        <i class="fas fa-plus"></i> Create Post
                     </a>
                     {{if eq .User.Role "admin"}}
                         <a href="/admin/dashboard" class="nav-link">
@@ -35,12 +35,37 @@
                         </a>
                     {{end}}
                     <div class="nav-user">
-                        <span class="nav-username">{{.User.Username}}</span>
-                        <button id="logout-btn" class="btn btn-sm btn-outline">Logout</button>
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-info">
+                            <span class="nav-username">u/{{.User.Username}}</span>
+                            <div class="user-dropdown">
+                                <button class="dropdown-toggle" onclick="toggleUserDropdown()">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-menu" id="user-dropdown">
+                                    <a href="/profile" class="dropdown-item">
+                                        <i class="fas fa-user"></i> Profile
+                                    </a>
+                                    <a href="/settings" class="dropdown-item">
+                                        <i class="fas fa-cog"></i> Settings
+                                    </a>
+                                    <hr class="dropdown-divider">
+                                    <button id="logout-btn" class="dropdown-item logout-btn">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 {{else}}
-                    <a href="/login" class="nav-link">Login</a>
-                    <a href="/register" class="nav-link">Register</a>
+                    <a href="/login" class="nav-link btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Log In
+                    </a>
+                    <a href="/register" class="nav-link btn-signup">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </a>
                 {{end}}
             </div>
         </div>
@@ -52,10 +77,26 @@
 
     <footer class="footer">
         <div class="footer-container">
-            <p>&copy; 2024 GoForum. Built with Go and passion.</p>
+            <p>&copy; 2024 GoForum. Built with Go and passion for community discussions.</p>
         </div>
     </footer>
 
     <script src="/static/js/app.js"></script>
+    <script>
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('user-dropdown');
+            const toggle = document.querySelector('.dropdown-toggle');
+            
+            if (dropdown && !dropdown.contains(event.target) && !toggle.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -2,18 +2,42 @@
 <div class="forum-container">
     <div class="forum-sidebar">
         <div class="sidebar-section">
-            <h3><i class="fas fa-tags"></i> Categories</h3>
+            <h3><i class="fas fa-home"></i> Home</h3>
             <div class="tag-list">
                 <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
-                    <i class="fas fa-home"></i> All Threads
+                    <i class="fas fa-fire"></i> Popular
+                </a>
+                <a href="/?sort=new" class="tag-item">
+                    <i class="fas fa-clock"></i> New
+                </a>
+                <a href="/?sort=top" class="tag-item">
+                    <i class="fas fa-arrow-up"></i> Top
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3><i class="fas fa-tags"></i> Communities</h3>
+            <div class="tag-list">
+                <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
+                    <i class="fas fa-home"></i> All Communities
                 </a>
                 {{range .Tags}}
                 <a href="/?tag={{.Name}}" class="tag-item {{if eq $.Filters.TagName .Name}}active{{end}}">
-                    <i class="fas fa-hashtag"></i> {{.Name}}
+                    <i class="fas fa-hashtag"></i> r/{{.Name}}
                 </a>
                 {{end}}
             </div>
         </div>
+
+        {{if .User}}
+        <div class="sidebar-section">
+            <h3><i class="fas fa-plus"></i> Create</h3>
+            <a href="/threads/create" class="btn btn-primary btn-full">
+                <i class="fas fa-plus"></i> Create Post
+            </a>
+        </div>
+        {{end}}
     </div>
 
     <div class="forum-main">
@@ -21,33 +45,29 @@
             <div class="forum-title">
                 <h1>
                     {{if .Filters.TagName}}
-                        <i class="fas fa-hashtag"></i> {{.Filters.TagName}}
+                        <i class="fas fa-hashtag"></i> r/{{.Filters.TagName}}
                     {{else if .Filters.Search}}
                         <i class="fas fa-search"></i> Search: "{{.Filters.Search}}"
                     {{else}}
-                        <i class="fas fa-comments"></i> All Discussions
+                        <i class="fas fa-home"></i> Popular Posts
                     {{end}}
                 </h1>
-                <p>{{.Pagination.TotalItems}} threads found</p>
+                <p>{{.Pagination.TotalItems}} posts</p>
             </div>
-            
-            {{if .User}}
-            <div class="forum-actions">
-                <a href="/threads/create" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Thread
-                </a>
-            </div>
-            {{end}}
         </div>
 
         <div class="thread-filters">
             <div class="filter-group">
-                <label>Show:</label>
+                <select id="sort-select" onchange="updateSort(this.value)">
+                    <option value="hot" {{if eq .Filters.SortBy "hot"}}selected{{end}}>🔥 Hot</option>
+                    <option value="new" {{if eq .Filters.SortBy "new"}}selected{{end}}>🆕 New</option>
+                    <option value="top" {{if eq .Filters.SortBy "top"}}selected{{end}}>⬆️ Top</option>
+                </select>
+                
                 <select id="limit-select" onchange="updateLimit(this.value)">
-                    <option value="10" {{if eq .Pagination.ItemsPerPage 10}}selected{{end}}>10 per page</option>
-                    <option value="20" {{if eq .Pagination.ItemsPerPage 20}}selected{{end}}>20 per page</option>
-                    <option value="30" {{if eq .Pagination.ItemsPerPage 30}}selected{{end}}>30 per page</option>
-                    <option value="all" {{if eq .Pagination.ItemsPerPage 0}}selected{{end}}>Show all</option>
+                    <option value="10" {{if eq .Pagination.ItemsPerPage 10}}selected{{end}}>10 posts</option>
+                    <option value="25" {{if eq .Pagination.ItemsPerPage 25}}selected{{end}}>25 posts</option>
+                    <option value="50" {{if eq .Pagination.ItemsPerPage 50}}selected{{end}}>50 posts</option>
                 </select>
             </div>
         </div>
@@ -55,48 +75,80 @@
         <div class="thread-list">
             {{if .Threads}}
                 {{range .Threads}}
-                <div class="thread-item">
-                    <div class="thread-icon">
-                        {{if eq .Status "closed"}}
-                            <i class="fas fa-lock text-warning"></i>
-                        {{else}}
-                            <i class="fas fa-comment text-primary"></i>
-                        {{end}}
-                    </div>
-                    
-                    <div class="thread-content">
-                        <div class="thread-header">
-                            <h3><a href="/threads/{{.ID}}" class="thread-title">{{.Title}}</a></h3>
-                            <div class="thread-meta">
-                                <span class="thread-author">
-                                    <i class="fas fa-user"></i> {{.Author.Username}}
-                                </span>
-                                <span class="thread-date">
-                                    <i class="fas fa-clock"></i> {{.CreatedAt.Format "Jan 02, 2006 15:04"}}
-                                </span>
-                                {{if eq .Status "closed"}}
-                                    <span class="thread-status closed">
-                                        <i class="fas fa-lock"></i> Closed
-                                    </span>
-                                {{end}}
-                            </div>
-                        </div>
-                        
-                        <p class="thread-description">{{.Description}}</p>
-                        
-                        <div class="thread-tags">
-                            {{range .Tags}}
-                            <a href="/?tag={{.Name}}" class="thread-tag">
-                                <i class="fas fa-hashtag"></i>{{.Name}}
-                            </a>
+                <div class="thread-card" data-thread-id="{{.ID}}">
+                    <div class="thread-content-wrapper">
+                        <div class="thread-vote-section">
+                            {{if $.User}}
+                                <button class="vote-arrow" onclick="voteThread('{{.ID}}', 1)" title="Upvote">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                            {{else}}
+                                <div class="vote-arrow" title="Login to vote">
+                                    <i class="fas fa-arrow-up"></i>
+                                </div>
+                            {{end}}
+                            
+                            <div class="vote-score" data-score="{{.MessageCount}}">{{.MessageCount}}</div>
+                            
+                            {{if $.User}}
+                                <button class="vote-arrow" onclick="voteThread('{{.ID}}', -1)" title="Downvote">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                            {{else}}
+                                <div class="vote-arrow" title="Login to vote">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
                             {{end}}
                         </div>
-                    </div>
-                    
-                    <div class="thread-stats">
-                        <div class="stat">
-                            <i class="fas fa-comments"></i>
-                            <span>{{.MessageCount}}</span>
+                        
+                        <div class="thread-main-content">
+                            <div class="thread-meta-line">
+                                {{range .Tags}}
+                                    <a href="/?tag={{.Name}}" class="community-link">r/{{.Name}}</a>
+                                {{end}}
+                                <span>•</span>
+                                <span>Posted by u/{{.Author.Username}}</span>
+                                <span>•</span>
+                                <span title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
+                                {{if eq .Status "closed"}}
+                                    <span class="status-badge">🔒 Closed</span>
+                                {{end}}
+                            </div>
+                            
+                            <a href="/threads/{{.ID}}" class="thread-title-link">
+                                {{.Title}}
+                            </a>
+                            
+                            {{if .Description}}
+                            <div class="thread-preview">
+                                {{truncate .Description 200}}
+                            </div>
+                            {{end}}
+                            
+                            <div class="thread-footer">
+                                <div class="thread-action" onclick="window.location.href='/threads/{{.ID}}'">
+                                    <i class="fas fa-comment"></i>
+                                    <span>{{.MessageCount}} comments</span>
+                                </div>
+                                
+                                <div class="thread-action" onclick="shareThread('{{.ID}}')">
+                                    <i class="fas fa-share"></i>
+                                    <span>Share</span>
+                                </div>
+                                
+                                <div class="thread-action" onclick="saveThread('{{.ID}}')">
+                                    <i class="fas fa-bookmark"></i>
+                                    <span>Save</span>
+                                </div>
+                                
+                                {{if $.User}}
+                                    {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
+                                    <div class="thread-action" onclick="showThreadOptions('{{.ID}}')">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </div>
+                                    {{end}}
+                                {{end}}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -104,20 +156,27 @@
             {{else}}
                 <div class="empty-state">
                     <i class="fas fa-comment-slash"></i>
-                    <h3>No threads found</h3>
+                    <h3>No posts found</h3>
                     <p>
                         {{if .Filters.Search}}
-                            No threads match your search criteria.
+                            No posts match your search criteria.
                         {{else if .Filters.TagName}}
-                            No threads in this category yet.
+                            No posts in r/{{.Filters.TagName}} yet.
                         {{else}}
-                            No threads have been created yet.
+                            No posts have been created yet.
                         {{end}}
                     </p>
                     {{if .User}}
                         <a href="/threads/create" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Create the first thread
+                            <i class="fas fa-plus"></i> Create the first post
                         </a>
+                    {{else}}
+                        <div>
+                            <a href="/login" class="btn btn-outline">Login</a>
+                            <span> or </span>
+                            <a href="/register" class="btn btn-primary">Sign Up</a>
+                            <span> to create posts</span>
+                        </div>
                     {{end}}
                 </div>
             {{end}}
@@ -126,17 +185,18 @@
         {{if gt .Pagination.TotalPages 1}}
         <div class="pagination">
             {{if .Pagination.HasPrev}}
-                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}" class="pagination-btn">
+                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
                     <i class="fas fa-chevron-left"></i> Previous
                 </a>
             {{end}}
             
             <span class="pagination-info">
                 Page {{.Pagination.CurrentPage}} of {{.Pagination.TotalPages}}
+                ({{.Pagination.TotalItems}} total posts)
             </span>
             
             {{if .Pagination.HasNext}}
-                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}" class="pagination-btn">
+                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
                     Next <i class="fas fa-chevron-right"></i>
                 </a>
             {{end}}
@@ -145,21 +205,293 @@
     </div>
 </div>
 
+<!-- Share Modal -->
+<div id="share-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Share Post</h3>
+            <button class="modal-close" onclick="closeModal('share-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="share-options">
+                <button class="share-option" onclick="copyLink()">
+                    <i class="fas fa-link"></i> Copy Link
+                </button>
+                <button class="share-option" onclick="shareToTwitter()">
+                    <i class="fab fa-twitter"></i> Twitter
+                </button>
+                <button class="share-option" onclick="shareToFacebook()">
+                    <i class="fab fa-facebook"></i> Facebook
+                </button>
+                <button class="share-option" onclick="shareToReddit()">
+                    <i class="fab fa-reddit"></i> Reddit
+                </button>
+            </div>
+            <div class="share-link">
+                <input type="text" id="share-link-input" readonly>
+                <button onclick="copyShareLink()">Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-function updateLimit(limit) {
+let currentShareThreadId = null;
+
+// Helper function for time ago
+function timeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + 'm ago';
+    if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + 'h ago';
+    if (diffInSeconds < 2592000) return Math.floor(diffInSeconds / 86400) + 'd ago';
+    return date.toLocaleDateString();
+}
+
+// Truncate text
+function truncate(text, length) {
+    return text.length > length ? text.substring(0, length) + '...' : text;
+}
+
+// Update sort
+function updateSort(sortBy) {
     const url = new URL(window.location);
-    url.searchParams.set('limit', limit);
-    url.searchParams.delete('page'); // Reset to first page
+    url.searchParams.set('sort', sortBy);
+    url.searchParams.delete('page');
     window.location.href = url.toString();
 }
 
-// Template helper functions for pagination
-function sub(a, b) {
-    return a - b;
+// Update limit
+function updateLimit(limit) {
+    const url = new URL(window.location);
+    url.searchParams.set('limit', limit);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
 }
 
-function add(a, b) {
-    return a + b;
+// Vote on thread (placeholder - you can implement this)
+async function voteThread(threadId, voteType) {
+    try {
+        // This would be implemented when you add thread voting
+        console.log('Vote thread:', threadId, voteType);
+        
+        // Show feedback
+        if (window.GoForum) {
+            GoForum.showNotification('Voting on threads coming soon!', 'info');
+        }
+    } catch (error) {
+        console.error('Error voting:', error);
+        if (window.GoForum) {
+            GoForum.showNotification('Failed to vote. Please try again.', 'error');
+        }
+    }
 }
+
+// Share thread
+function shareThread(threadId) {
+    currentShareThreadId = threadId;
+    const shareUrl = `${window.location.origin}/threads/${threadId}`;
+    document.getElementById('share-link-input').value = shareUrl;
+    document.getElementById('share-modal').style.display = 'flex';
+}
+
+// Close modal
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Copy share link
+function copyShareLink() {
+    const input = document.getElementById('share-link-input');
+    input.select();
+    input.setSelectionRange(0, 99999); // For mobile devices
+    document.execCommand('copy');
+    
+    if (window.GoForum) {
+        GoForum.showNotification('Link copied to clipboard!', 'success');
+    }
+    closeModal('share-modal');
+}
+
+// Social sharing functions
+function shareToTwitter() {
+    const url = document.getElementById('share-link-input').value;
+    const text = 'Check out this post on GoForum!';
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+}
+
+function shareToFacebook() {
+    const url = document.getElementById('share-link-input').value;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+}
+
+function shareToReddit() {
+    const url = document.getElementById('share-link-input').value;
+    const title = 'Check out this post on GoForum!';
+    window.open(`https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
+}
+
+// Save thread (placeholder)
+function saveThread(threadId) {
+    if (window.GoForum) {
+        GoForum.showNotification('Save feature coming soon!', 'info');
+    }
+}
+
+// Show thread options
+function showThreadOptions(threadId) {
+    const options = [
+        'Edit Post',
+        'Delete Post',
+        'Pin Post',
+        'Lock Comments'
+    ];
+    
+    // Simple implementation - you can enhance this with a proper dropdown
+    const action = prompt('Choose action:\n' + options.join('\n'));
+    
+    if (action) {
+        if (window.GoForum) {
+            GoForum.showNotification(`${action} feature coming soon!`, 'info');
+        }
+    }
+}
+
+// Template helper functions
+function sub(a, b) { return a - b; }
+function add(a, b) { return a + b; }
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('share-modal');
+    if (e.target === modal) {
+        closeModal('share-modal');
+    }
+});
+
+// Initialize time ago updates
+setInterval(() => {
+    document.querySelectorAll('[title*="2024"]').forEach(el => {
+        const date = new Date(el.getAttribute('title'));
+        el.textContent = timeAgo(date);
+    });
+}, 60000); // Update every minute
 </script>
+
+<style>
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1a1a1b;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #878a8c;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    background: #f6f7f8;
+    color: #1a1a1b;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.share-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #1a1a1b;
+}
+
+.share-option:hover {
+    background: #f6f7f8;
+    border-color: #0079d3;
+}
+
+.share-link {
+    display: flex;
+    gap: 8px;
+}
+
+.share-link input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.share-link button {
+    padding: 8px 16px;
+    background: #0079d3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.share-link button:hover {
+    background: #005fa3;
+}
+</style>
 {{end}}

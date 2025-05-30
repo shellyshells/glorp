@@ -21,8 +21,13 @@ func main() {
 	// Static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 
-	// View routes (HTML)
-	r.HandleFunc("/", controllers.HomeHandler).Methods("GET")
+	// Apply optional auth middleware to home and thread view routes
+	homeRoutes := r.PathPrefix("").Subrouter()
+	homeRoutes.Use(middleware.OptionalAuthMiddleware)
+	homeRoutes.HandleFunc("/", controllers.HomeHandler).Methods("GET")
+	homeRoutes.HandleFunc("/threads/{id:[0-9]+}", controllers.ShowThreadHandler).Methods("GET")
+
+	// Public auth routes (no middleware)
 	r.HandleFunc("/register", controllers.RegisterViewHandler).Methods("GET")
 	r.HandleFunc("/login", controllers.LoginViewHandler).Methods("GET")
 
@@ -30,20 +35,21 @@ func main() {
 	protected := r.PathPrefix("").Subrouter()
 	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/threads/create", controllers.CreateThreadViewHandler).Methods("GET")
-	protected.HandleFunc("/threads/{id}/edit", controllers.EditThreadViewHandler).Methods("GET")
+	protected.HandleFunc("/threads/{id:[0-9]+}/edit", controllers.EditThreadViewHandler).Methods("GET")
 
 	// Admin routes
 	admin := r.PathPrefix("/admin").Subrouter()
 	admin.Use(middleware.AuthMiddleware, middleware.AdminMiddleware)
 	admin.HandleFunc("/dashboard", controllers.AdminDashboardHandler).Methods("GET")
 
-	// Thread view (accessible to all)
-	r.HandleFunc("/threads/{id}", controllers.ShowThreadHandler).Methods("GET")
-
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
 
-	// Auth API
+	// Public API routes
+	api.HandleFunc("/threads", controllers.GetThreadsHandler).Methods("GET")
+	api.HandleFunc("/search", controllers.SearchHandler).Methods("GET")
+
+	// Auth API routes (no middleware required)
 	api.HandleFunc("/register", controllers.RegisterHandler).Methods("POST")
 	api.HandleFunc("/login", controllers.LoginHandler).Methods("POST")
 	api.HandleFunc("/logout", controllers.LogoutHandler).Methods("POST")
@@ -54,24 +60,22 @@ func main() {
 
 	// Thread API
 	apiProtected.HandleFunc("/threads", controllers.CreateThreadHandler).Methods("POST")
-	apiProtected.HandleFunc("/threads/{id}", controllers.UpdateThreadHandler).Methods("PUT")
-	apiProtected.HandleFunc("/threads/{id}", controllers.DeleteThreadHandler).Methods("DELETE")
+	apiProtected.HandleFunc("/threads/{id:[0-9]+}", controllers.UpdateThreadHandler).Methods("PUT")
+	apiProtected.HandleFunc("/threads/{id:[0-9]+}", controllers.DeleteThreadHandler).Methods("DELETE")
 
 	// Message API
-	apiProtected.HandleFunc("/threads/{id}/messages", controllers.CreateMessageHandler).Methods("POST")
-	apiProtected.HandleFunc("/messages/{id}", controllers.DeleteMessageHandler).Methods("DELETE")
-	apiProtected.HandleFunc("/messages/{id}/vote", controllers.VoteMessageHandler).Methods("POST")
-
-	// Public API routes
-	api.HandleFunc("/threads", controllers.GetThreadsHandler).Methods("GET")
-	api.HandleFunc("/search", controllers.SearchHandler).Methods("GET")
+	apiProtected.HandleFunc("/threads/{id:[0-9]+}/messages", controllers.CreateMessageHandler).Methods("POST")
+	apiProtected.HandleFunc("/messages/{id:[0-9]+}", controllers.DeleteMessageHandler).Methods("DELETE")
+	apiProtected.HandleFunc("/messages/{id:[0-9]+}/vote", controllers.VoteMessageHandler).Methods("POST")
 
 	// Admin API routes
 	apiAdmin := api.PathPrefix("/admin").Subrouter()
 	apiAdmin.Use(middleware.AuthMiddleware, middleware.AdminMiddleware)
-	apiAdmin.HandleFunc("/ban/{id}", controllers.BanUserHandler).Methods("POST")
-	apiAdmin.HandleFunc("/threads/{id}/status", controllers.UpdateThreadStatusHandler).Methods("PUT")
+	apiAdmin.HandleFunc("/ban/{id:[0-9]+}", controllers.BanUserHandler).Methods("POST")
+	apiAdmin.HandleFunc("/threads/{id:[0-9]+}/status", controllers.UpdateThreadStatusHandler).Methods("PUT")
 
-	log.Println("Server starting on :8080")
+	log.Println("🚀 GoForum server starting on :8080")
+	log.Println("📱 Visit http://localhost:8080 to access the forum")
+	log.Println("👤 Default admin: username=admin, password=AdminPassword123!")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
