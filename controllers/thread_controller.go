@@ -362,3 +362,72 @@ func DeleteThreadHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Thread deleted successfully",
 	})
 }
+
+func VoteThreadHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	threadID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid thread ID", http.StatusBadRequest)
+		return
+	}
+
+	user := middleware.GetUserFromContext(r)
+	if user == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		VoteType int `json:"vote_type"` // 1 for upvote, -1 for downvote
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate vote type
+	if req.VoteType != 1 && req.VoteType != -1 {
+		http.Error(w, "Invalid vote type", http.StatusBadRequest)
+		return
+	}
+
+	// Check if thread exists
+	thread, err := models.GetThreadByID(threadID)
+	if err != nil {
+		http.Error(w, "Thread not found", http.StatusNotFound)
+		return
+	}
+
+	// Users cannot vote on their own threads
+	if thread.AuthorID == user.ID {
+		http.Error(w, "Cannot vote on your own thread", http.StatusForbidden)
+		return
+	}
+
+	err = models.VoteThread(threadID, user.ID, req.VoteType)
+	if err != nil {
+		http.Error(w, "Failed to vote: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated vote stats
+	upvotes, downvotes, score, err := models.GetThreadVoteStats(threadID)
+	if err != nil {
+		http.Error(w, "Failed to get vote stats", http.StatusInternalServerError)
+		return
+	}
+
+	// Get user's current vote
+	userVote, _ := models.GetUserThreadVote(threadID, user.ID)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":   true,
+		"upvotes":   upvotes,
+		"downvotes": downvotes,
+		"score":     score,
+		"user_vote": userVote,
+		"message":   "Vote recorded successfully",
+	})
+}

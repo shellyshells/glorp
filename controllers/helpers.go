@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"goforum/models"
 	"html/template"
 	"strings"
 	"time"
@@ -51,6 +52,36 @@ func init() {
 		},
 		"title": func(s string) string {
 			return strings.Title(s)
+		},
+		"slice": func(items interface{}, start, end int) interface{} {
+			switch v := items.(type) {
+			case []models.Thread:
+				if start >= len(v) {
+					return []models.Thread{}
+				}
+				if end > len(v) {
+					end = len(v)
+				}
+				return v[start:end]
+			case []models.Message:
+				if start >= len(v) {
+					return []models.Message{}
+				}
+				if end > len(v) {
+					end = len(v)
+				}
+				return v[start:end]
+			default:
+				return items
+			}
+		},
+		"isUserOnline": func(user *models.User) bool {
+			if user == nil || !user.ShowOnline {
+				return false
+			}
+			// Consider user online if last activity was within 5 minutes
+			threshold := time.Now().Add(-5 * time.Minute)
+			return user.LastActivity.After(threshold)
 		},
 	}
 }

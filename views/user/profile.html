@@ -1,148 +1,303 @@
 {{define "content"}}
 <div class="profile-container">
+    <!-- Profile Header with Cover -->
     <div class="profile-header">
-        <div class="profile-banner">
-            <div class="profile-info">
-                <div class="profile-avatar">
-                    <i class="fas fa-user"></i>
+        <div class="profile-cover">
+            <div class="cover-gradient"></div>
+        </div>
+        <div class="profile-info-section">
+            <div class="profile-avatar-container">
+                <div class="profile-avatar-wrapper">
+                    {{if .User.AvatarURL}}
+                        <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="profile-avatar-img">
+                    {{else}}
+                        <div class="profile-avatar-default">
+                            <span class="avatar-initial">{{index .User.Username 0 | upper}}</span>
+                        </div>
+                    {{end}}
+                    {{if isUserOnline .User}}
+                        <div class="online-indicator" title="Online"></div>
+                    {{end}}
                 </div>
-                <div class="profile-details">
-                    <h1>u/{{.User.Username}}</h1>
-                    <div class="profile-meta">
-                        <span class="profile-joined">
-                            <i class="fas fa-cake-candles"></i>
-                            Joined {{.User.CreatedAt.Format "January 2006"}}
+                {{if eq .CurrentUser.ID .User.ID}}
+                    <button class="avatar-edit-btn" onclick="showAvatarModal()">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                {{end}}
+            </div>
+            
+            <div class="profile-details">
+                <div class="profile-names">
+                    <h1 class="profile-display-name">{{if .User.DisplayName}}{{.User.DisplayName}}{{else}}{{.User.Username}}{{end}}</h1>
+                    <span class="profile-username">u/{{.User.Username}}</span>
+                    {{if eq .User.Role "admin"}}
+                        <span class="admin-badge">
+                            <i class="fas fa-shield-alt"></i> Admin
                         </span>
-                        <span class="profile-role">
-                            <i class="fas fa-shield-alt"></i>
-                            {{if eq .User.Role "admin"}}Administrator{{else}}Member{{end}}
-                        </span>
+                    {{end}}
+                </div>
+                
+                {{if .User.Bio}}
+                <p class="profile-bio">{{.User.Bio}}</p>
+                {{end}}
+                
+                <div class="profile-metadata">
+                    {{if .User.Location}}
+                        <div class="profile-meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{.User.Location}}</span>
+                        </div>
+                    {{end}}
+                    {{if .User.Website}}
+                        <div class="profile-meta-item">
+                            <i class="fas fa-link"></i>
+                            <a href="{{.User.Website}}" target="_blank" rel="noopener">{{.User.Website}}</a>
+                        </div>
+                    {{end}}
+                    <div class="profile-meta-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Joined {{.User.CreatedAt.Format "January 2006"}}</span>
                     </div>
+                    {{if .User.LastLogin}}
+                        <div class="profile-meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Last seen {{timeAgo .User.LastActivity}}</span>
+                        </div>
+                    {{end}}
                 </div>
+            </div>
+            
+            <div class="profile-actions">
+                {{if eq .CurrentUser.ID .User.ID}}
+                    <a href="/settings" class="btn btn-outline">
+                        <i class="fas fa-cog"></i> Edit Profile
+                    </a>
+                {{else}}
+                    {{if .User.AllowMessages}}
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-envelope"></i> Message
+                        </button>
+                    {{end}}
+                    <button class="btn btn-outline" onclick="followUser()">
+                        <i class="fas fa-user-plus"></i> Follow
+                    </button>
+                {{end}}
             </div>
         </div>
     </div>
 
-    <div class="profile-content">
-        <div class="profile-sidebar">
-            <div class="profile-stats-card">
-                <h3>Stats</h3>
-                <div class="stat-item">
-                    <span class="stat-label">Post Karma</span>
-                    <span class="stat-value">{{.ThreadCount}}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Comment Karma</span>
-                    <span class="stat-value">{{.MessageCount}}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Threads Created</span>
-                    <span class="stat-value">{{.ThreadCount}}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Comments Made</span>
-                    <span class="stat-value">{{.MessageCount}}</span>
-                </div>
+    <!-- Profile Stats -->
+    <div class="profile-stats-bar">
+        <div class="profile-stats-container">
+            <div class="stat-item">
+                <div class="stat-value">{{.ThreadCount}}</div>
+                <div class="stat-label">Posts</div>
             </div>
-
-            <div class="profile-actions-card">
-                <h3>Actions</h3>
-                <a href="/settings" class="profile-action-btn">
-                    <i class="fas fa-cog"></i> Edit Settings
-                </a>
-                <a href="/threads/create" class="profile-action-btn">
-                    <i class="fas fa-plus"></i> Create Post
-                </a>
-                {{if eq .User.Role "admin"}}
-                <a href="/admin/dashboard" class="profile-action-btn">
-                    <i class="fas fa-shield-alt"></i> Admin Dashboard
-                </a>
-                {{end}}
+            <div class="stat-item">
+                <div class="stat-value">{{.MessageCount}}</div>
+                <div class="stat-label">Comments</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{.PostKarma}}</div>
+                <div class="stat-label">Post Karma</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{.CommentKarma}}</div>
+                <div class="stat-label">Comment Karma</div>
             </div>
         </div>
+    </div>
 
+    <!-- Profile Content -->
+    <div class="profile-content">
         <div class="profile-main">
             <div class="profile-tabs">
-                <button class="profile-tab active" data-tab="threads">
+                <button class="profile-tab active" data-tab="overview">
+                    <i class="fas fa-home"></i> Overview
+                </button>
+                <button class="profile-tab" data-tab="posts">
                     <i class="fas fa-newspaper"></i> Posts
                 </button>
                 <button class="profile-tab" data-tab="comments">
                     <i class="fas fa-comments"></i> Comments
                 </button>
-                <button class="profile-tab" data-tab="saved">
-                    <i class="fas fa-bookmark"></i> Saved
-                </button>
+                {{if eq .CurrentUser.ID .User.ID}}
+                    <button class="profile-tab" data-tab="saved">
+                        <i class="fas fa-bookmark"></i> Saved
+                    </button>
+                {{end}}
             </div>
 
-            <div class="profile-tab-content">
-                <div class="tab-pane active" id="threads-tab">
-                    {{if .UserThreads}}
-                        <div class="user-posts">
-                            {{range .UserThreads}}
-                            <div class="user-post-item">
-                                <div class="post-vote-section">
-                                    <div class="vote-count">{{.MessageCount}}</div>
-                                    <div class="vote-label">votes</div>
-                                </div>
-                                <div class="post-content">
-                                    <h3><a href="/threads/{{.ID}}">{{.Title}}</a></h3>
-                                    <div class="post-meta">
-                                        {{range .Tags}}
-                                            <span class="post-tag">r/{{.Name}}</span>
-                                        {{end}}
-                                        <span class="post-date">{{timeAgo .CreatedAt}}</span>
-                                        <span class="post-comments">{{.MessageCount}} comments</span>
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview-tab">
+                <div class="overview-grid">
+                    <div class="overview-section">
+                        <h3>Recent Posts</h3>
+                        {{if .UserThreads}}
+                            {{range slice .UserThreads 0 3}}
+                            <div class="mini-post-item">
+                                <div class="mini-post-vote">{{.Score}}</div>
+                                <div class="mini-post-content">
+                                    <h4><a href="/threads/{{.ID}}">{{.Title}}</a></h4>
+                                    <div class="mini-post-meta">
+                                        {{range .Tags}}<span class="mini-tag">r/{{.Name}}</span>{{end}}
+                                        <span>{{timeAgo .CreatedAt}}</span>
                                     </div>
-                                    {{if .Description}}
-                                    <p class="post-preview">{{truncate .Description 150}}</p>
+                                </div>
+                            </div>
+                            {{end}}
+                            {{if gt (len .UserThreads) 3}}
+                                <a href="#" onclick="switchTab('posts')" class="view-all-link">View all posts →</a>
+                            {{end}}
+                        {{else}}
+                            <div class="empty-section">
+                                <i class="fas fa-newspaper"></i>
+                                <p>No posts yet</p>
+                            </div>
+                        {{end}}
+                    </div>
+
+                    <div class="overview-section">
+                        <h3>Recent Comments</h3>
+                        {{if .UserMessages}}
+                            {{range slice .UserMessages 0 3}}
+                            <div class="mini-comment-item">
+                                <div class="mini-comment-vote">{{.Score}}</div>
+                                <div class="mini-comment-content">
+                                    <p>{{truncate .Content 100}}</p>
+                                    <div class="mini-comment-meta">
+                                        <span>{{timeAgo .CreatedAt}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+                            {{if gt (len .UserMessages) 3}}
+                                <a href="#" onclick="switchTab('comments')" class="view-all-link">View all comments →</a>
+                            {{end}}
+                        {{else}}
+                            <div class="empty-section">
+                                <i class="fas fa-comments"></i>
+                                <p>No comments yet</p>
+                            </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posts Tab -->
+            <div class="tab-content" id="posts-tab" style="display: none;">
+                {{if .UserThreads}}
+                    <div class="profile-posts">
+                        {{range .UserThreads}}
+                        <div class="profile-post-item">
+                            <div class="post-vote-section">
+                                <div class="vote-count">{{.Score}}</div>
+                                <div class="vote-label">points</div>
+                            </div>
+                            <div class="post-content">
+                                <h3><a href="/threads/{{.ID}}">{{.Title}}</a></h3>
+                                <div class="post-meta">
+                                    {{range .Tags}}
+                                        <span class="post-tag">r/{{.Name}}</span>
                                     {{end}}
+                                    <span class="post-date">{{timeAgo .CreatedAt}}</span>
+                                    <span class="post-comments">{{.MessageCount}} comments</span>
                                 </div>
+                                {{if .Description}}
+                                <p class="post-preview">{{truncate .Description 200}}</p>
+                                {{end}}
                             </div>
-                            {{end}}
                         </div>
-                    {{else}}
-                        <div class="empty-tab">
-                            <i class="fas fa-newspaper"></i>
-                            <h3>No posts yet</h3>
-                            <p>This user hasn't posted anything yet.</p>
-                            <a href="/threads/create" class="btn btn-primary">Create your first post</a>
-                        </div>
-                    {{end}}
-                </div>
-
-                <div class="tab-pane" id="comments-tab" style="display: none;">
-                    {{if .UserMessages}}
-                        <div class="user-comments">
-                            {{range .UserMessages}}
-                            <div class="user-comment-item">
-                                <div class="comment-vote-section">
-                                    <div class="vote-count">{{.Score}}</div>
-                                    <div class="vote-label">points</div>
-                                </div>
-                                <div class="comment-content">
-                                    <p>{{.Content}}</p>
-                                    <div class="comment-meta">
-                                        <span class="comment-thread">in <a href="/threads/{{.ThreadID}}">thread</a></span>
-                                        <span class="comment-date">{{timeAgo .CreatedAt}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {{end}}
-                        </div>
-                    {{else}}
-                        <div class="empty-tab">
-                            <i class="fas fa-comments"></i>
-                            <h3>No comments yet</h3>
-                            <p>This user hasn't commented on anything yet.</p>
-                        </div>
-                    {{end}}
-                </div>
-
-                <div class="tab-pane" id="saved-tab" style="display: none;">
+                        {{end}}
+                    </div>
+                {{else}}
                     <div class="empty-tab">
-                        <i class="fas fa-bookmark"></i>
-                        <h3>No saved posts</h3>
-                        <p>Saved posts feature coming soon!</p>
+                        <i class="fas fa-newspaper"></i>
+                        <h3>No posts yet</h3>
+                        <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} posted anything yet.</p>
+                        {{if eq .CurrentUser.ID .User.ID}}
+                            <a href="/threads/create" class="btn btn-primary">Create your first post</a>
+                        {{end}}
+                    </div>
+                {{end}}
+            </div>
+
+            <!-- Comments Tab -->
+            <div class="tab-content" id="comments-tab" style="display: none;">
+                {{if .UserMessages}}
+                    <div class="profile-comments">
+                        {{range .UserMessages}}
+                        <div class="profile-comment-item">
+                            <div class="comment-vote-section">
+                                <div class="vote-count">{{.Score}}</div>
+                                <div class="vote-label">points</div>
+                            </div>
+                            <div class="comment-content">
+                                <p>{{.Content}}</p>
+                                <div class="comment-meta">
+                                    <span class="comment-thread">in <a href="/threads/{{.ThreadID}}">thread</a></span>
+                                    <span class="comment-date">{{timeAgo .CreatedAt}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
+                {{else}}
+                    <div class="empty-tab">
+                        <i class="fas fa-comments"></i>
+                        <h3>No comments yet</h3>
+                        <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} commented on anything yet.</p>
+                    </div>
+                {{end}}
+            </div>
+
+            <!-- Saved Tab (only for own profile) -->
+            {{if eq .CurrentUser.ID .User.ID}}
+            <div class="tab-content" id="saved-tab" style="display: none;">
+                <div class="empty-tab">
+                    <i class="fas fa-bookmark"></i>
+                    <h3>No saved posts</h3>
+                    <p>Saved posts feature coming soon!</p>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Modal -->
+<div id="avatar-modal" class="modal" style="display: none;">
+    <div class="modal-content avatar-modal-content">
+        <div class="modal-header">
+            <h3>Change Avatar</h3>
+            <button class="modal-close" onclick="closeAvatarModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="avatar-options">
+                <div class="avatar-option-section">
+                    <h4>Upload Custom Avatar</h4>
+                    <div class="upload-area" onclick="document.getElementById('avatar-upload').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload image</p>
+                        <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(this)">
+                    </div>
+                </div>
+                
+                <div class="avatar-option-section">
+                    <h4>Choose Avatar Style</h4>
+                    <div class="avatar-styles">
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient1')">
+                            <div class="avatar-preview gradient1">{{index .User.Username 0 | upper}}</div>
+                        </div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient2')">
+                            <div class="avatar-preview gradient2">{{index .User.Username 0 | upper}}</div>
+                        </div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient3')">
+                            <div class="avatar-preview gradient3">{{index .User.Username 0 | upper}}</div>
+                        </div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient4')">
+                            <div class="avatar-preview gradient4">{{index .User.Username 0 | upper}}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -151,138 +306,352 @@
 </div>
 
 <script>
+// Tab switching
 document.querySelectorAll('.profile-tab').forEach(tab => {
     tab.addEventListener('click', function() {
-        // Remove active class from all tabs
-        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-        
-        // Add active class to clicked tab
-        this.classList.add('active');
-        
-        // Show corresponding content
-        const tabId = this.dataset.tab + '-tab';
-        document.getElementById(tabId).style.display = 'block';
+        switchTab(this.dataset.tab);
     });
+});
+
+function switchTab(tabName) {
+    // Remove active class from all tabs and content
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.remove('active');
+        c.style.display = 'none';
+    });
+    
+    // Add active class to selected tab and content
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const content = document.getElementById(tabName + '-tab');
+    content.classList.add('active');
+    content.style.display = 'block';
+}
+
+// Avatar modal functions
+function showAvatarModal() {
+    document.getElementById('avatar-modal').style.display = 'flex';
+}
+
+function closeAvatarModal() {
+    document.getElementById('avatar-modal').style.display = 'none';
+}
+
+function handleAvatarUpload(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        // Show loading
+        const uploadArea = document.querySelector('.upload-area');
+        uploadArea.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Uploading...</p>';
+        
+        fetch('/api/profile/avatar', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Refresh to show new avatar
+            } else {
+                alert('Failed to upload avatar: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload avatar');
+        })
+        .finally(() => {
+            closeAvatarModal();
+        });
+    }
+}
+
+function selectAvatarStyle(style) {
+    fetch('/api/profile/avatar-style', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ style: style })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Refresh to show new avatar
+        } else {
+            alert('Failed to update avatar style');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update avatar style');
+    })
+    .finally(() => {
+        closeAvatarModal();
+    });
+}
+
+// Placeholder functions for future features
+function sendMessage() {
+    alert('Private messaging feature coming soon!');
+}
+
+function followUser() {
+    alert('Follow feature coming soon!');
+}
+
+// Helper function for array slicing in templates
+function slice(arr, start, end) {
+    return arr.slice(start, end);
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('avatar-modal');
+    if (e.target === modal) {
+        closeAvatarModal();
+    }
 });
 </script>
 
 <style>
+/* Beautiful Profile Page Styles */
 .profile-container {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0;
 }
 
 .profile-header {
-    margin-bottom: 20px;
-}
-
-.profile-banner {
-    background: linear-gradient(135deg, #0079d3, #00a8ff);
+    position: relative;
+    background: white;
     border-radius: 8px;
-    padding: 30px;
-    color: white;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.profile-info {
+.profile-cover {
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+}
+
+.cover-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.3));
+}
+
+.profile-info-section {
+    position: relative;
+    padding: 0 30px 30px;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 20px;
 }
 
-.profile-avatar {
-    width: 80px;
-    height: 80px;
-    background: rgba(255,255,255,0.2);
+.profile-avatar-container {
+    position: relative;
+    margin-top: -60px;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.profile-avatar-img {
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
+    border: 4px solid white;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.profile-avatar-default {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
-    border: 4px solid rgba(255,255,255,0.3);
-}
-
-.profile-details h1 {
-    margin: 0 0 8px 0;
-    font-size: 32px;
+    font-size: 48px;
     font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
 }
 
-.profile-meta {
+.profile-avatar-default.gradient1 { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+.profile-avatar-default.gradient2 { background: linear-gradient(135deg, #4834d4, #686de0); }
+.profile-avatar-default.gradient3 { background: linear-gradient(135deg, #00d2d3, #54a0ff); }
+.profile-avatar-default.gradient4 { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+
+.avatar-initial {
+    font-size: 48px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: #00d26a;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: #0079d3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
-    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.avatar-edit-btn:hover {
+    transform: scale(1.1);
+}
+
+.profile-details {
+    flex: 1;
+    padding-bottom: 10px;
+}
+
+.profile-names {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-display-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1b;
+    margin: 0;
+}
+
+.profile-username {
+    font-size: 16px;
+    color: #878a8c;
+    font-weight: 500;
+}
+
+.admin-badge {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profile-bio {
+    color: #1a1a1b;
+    margin: 8px 0 12px 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.profile-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
     font-size: 14px;
-    opacity: 0.9;
 }
 
-.profile-content {
+.profile-meta-item {
     display: flex;
-    gap: 20px;
+    align-items: center;
+    gap: 6px;
+    color: #878a8c;
 }
 
-.profile-sidebar {
-    width: 300px;
-    flex-shrink: 0;
+.profile-meta-item i {
+    color: #0079d3;
 }
 
-.profile-stats-card, .profile-actions-card {
+.profile-meta-item a {
+    color: #0079d3;
+    text-decoration: none;
+}
+
+.profile-meta-item a:hover {
+    text-decoration: underline;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 10px;
+}
+
+.profile-stats-bar {
     background: white;
     border-radius: 8px;
-    padding: 20px;
     margin-bottom: 20px;
-    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.profile-stats-card h3, .profile-actions-card h3 {
-    margin: 0 0 16px 0;
-    color: #1a1a1b;
-    font-size: 16px;
+.profile-stats-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 20px 0;
 }
 
 .stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #f6f7f8;
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    color: #878a8c;
-    font-size: 14px;
+    text-align: center;
+    padding: 0 20px;
 }
 
 .stat-value {
+    font-size: 24px;
     font-weight: 700;
     color: #1a1a1b;
+    margin-bottom: 4px;
 }
 
-.profile-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    color: #1a1a1b;
-    text-decoration: none;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    margin-bottom: 8px;
+.stat-label {
+    font-size: 12px;
+    color: #878a8c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.profile-action-btn:hover {
-    background: #f6f7f8;
-}
-
-.profile-main {
-    flex: 1;
+.profile-content {
     background: white;
     border-radius: 8px;
-    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .profile-tabs {
@@ -300,6 +669,10 @@ document.querySelectorAll('.profile-tab').forEach(tab => {
     font-weight: 600;
     transition: all 0.2s;
     border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .profile-tab.active {
@@ -310,118 +683,238 @@ document.querySelectorAll('.profile-tab').forEach(tab => {
 
 .profile-tab:hover:not(.active) {
     background: #f6f7f8;
+    color: #1a1a1b;
 }
 
-.profile-tab-content {
+.tab-content {
     padding: 20px;
 }
 
-.user-post-item, .user-comment-item {
-    display: flex;
-    gap: 16px;
-    padding: 16px 0;
-    border-bottom: 1px solid #edeff1;
+.overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
 }
 
-.user-post-item:last-child, .user-comment-item:last-child {
+.overview-section h3 {
+    color: #1a1a1b;
+    margin-bottom: 16px;
+    font-size: 18px;
+}
+
+.mini-post-item,
+.mini-comment-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f6f7f8;
+}
+
+.mini-post-item:last-child,
+.mini-comment-item:last-child {
     border-bottom: none;
 }
 
-.post-vote-section, .comment-vote-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 60px;
-}
-
-.vote-count {
-    font-size: 16px;
+.mini-post-vote,
+.mini-comment-vote {
+    background: #f6f7f8;
+    border-radius: 4px;
+    padding: 8px;
+    text-align: center;
     font-weight: 700;
-    color: #1a1a1b;
+    color: #0079d3;
+    min-width: 40px;
+    font-size: 14px;
 }
 
-.vote-label {
-    font-size: 12px;
-    color: #878a8c;
-}
-
-.post-content, .comment-content {
+.mini-post-content,
+.mini-comment-content {
     flex: 1;
 }
 
-.post-content h3 {
-    margin: 0 0 8px 0;
+.mini-post-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
 }
 
-.post-content h3 a {
+.mini-post-content h4 a {
     color: #1a1a1b;
     text-decoration: none;
-    font-size: 16px;
 }
 
-.post-content h3 a:hover {
+.mini-post-content h4 a:hover {
     text-decoration: underline;
 }
 
-.post-meta, .comment-meta {
-    display: flex;
-    gap: 12px;
+.mini-post-meta,
+.mini-comment-meta {
     font-size: 12px;
     color: #878a8c;
-    margin-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
-.post-tag {
+.mini-tag {
+    background: #f6f7f8;
     color: #0079d3;
+    padding: 2px 6px;
+    border-radius: 10px;
     font-weight: 600;
 }
 
-.post-preview {
-    color: #878a8c;
-    margin: 0;
-    line-height: 1.4;
-}
-
-.comment-content p {
-    margin: 0 0 8px 0;
+.mini-comment-content p {
+    margin: 0 0 4px 0;
     color: #1a1a1b;
+    font-size: 14px;
     line-height: 1.4;
 }
 
+.view-all-link {
+    color: #0079d3;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 8px;
+    display: inline-block;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.empty-section,
 .empty-tab {
     text-align: center;
-    padding: 60px 20px;
+    padding: 40px 20px;
     color: #878a8c;
 }
 
+.empty-section i,
 .empty-tab i {
     font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.5;
 }
 
+.empty-section h3,
 .empty-tab h3 {
     margin-bottom: 8px;
     color: #1a1a1b;
 }
 
+/* Avatar Modal */
+.avatar-modal-content {
+    max-width: 500px;
+    width: 90%;
+}
+
+.avatar-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.avatar-option-section h4 {
+    margin-bottom: 12px;
+    color: #1a1a1b;
+}
+
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upload-area:hover {
+    border-color: #0079d3;
+    background: #f6f7f8;
+}
+
+.upload-area i {
+    font-size: 32px;
+    color: #878a8c;
+    margin-bottom: 12px;
+}
+
+.avatar-styles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.avatar-style-option {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.avatar-style-option:hover {
+    transform: scale(1.1);
+}
+
+.avatar-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin: 0 auto;
+}
+
+.avatar-preview.gradient1 { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+.avatar-preview.gradient2 { background: linear-gradient(135deg, #4834d4, #686de0); }
+.avatar-preview.gradient3 { background: linear-gradient(135deg, #00d2d3, #54a0ff); }
+.avatar-preview.gradient4 { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .profile-content {
-        flex-direction: column;
+    .profile-container {
+        padding: 0 12px;
     }
     
-    .profile-sidebar {
-        width: 100%;
-    }
-    
-    .profile-info {
+    .profile-info-section {
         flex-direction: column;
+        align-items: center;
         text-align: center;
+        padding: 0 20px 20px;
     }
     
-    .profile-meta {
+    .profile-avatar-container {
+        margin-top: -60px;
+        margin-bottom: 16px;
+    }
+    
+    .profile-names {
         justify-content: center;
+    }
+    
+    .profile-metadata {
+        justify-content: center;
+    }
+    
+    .profile-stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .overview-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .profile-tabs {
+        overflow-x: auto;
+    }
+    
+    .profile-tab {
+        white-space: nowrap;
+        min-width: 120px;
     }
 }
 </style>
-{{end}}
