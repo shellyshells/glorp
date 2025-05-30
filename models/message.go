@@ -55,14 +55,14 @@ func GetMessageByID(id, userID int) (*Message, error) {
 		WHERE m.id = ?
 		GROUP BY m.id
 	`
-	
+
 	var authorUsername string
 	err := config.DB.QueryRow(query, id).Scan(
 		&message.ID, &message.ThreadID, &message.AuthorID, &message.Content,
 		&message.CreatedAt, &authorUsername, &message.Likes, &message.Dislikes,
 		&message.Score,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func GetMessageByID(id, userID int) (*Message, error) {
 
 func GetMessages(filters MessageFilters) ([]Message, int, error) {
 	var messages []Message
-	
+
 	// Count total messages
 	countQuery := `SELECT COUNT(*) FROM messages WHERE thread_id = ?`
 	var total int
@@ -122,7 +122,7 @@ func GetMessages(filters MessageFilters) ([]Message, int, error) {
 	if filters.Limit > 0 {
 		query += " LIMIT ?"
 		args = append(args, filters.Limit)
-		
+
 		if filters.Page > 0 {
 			offset := (filters.Page - 1) * filters.Limit
 			query += " OFFSET ?"
@@ -139,7 +139,7 @@ func GetMessages(filters MessageFilters) ([]Message, int, error) {
 	for rows.Next() {
 		var message Message
 		var authorUsername string
-		
+
 		err := rows.Scan(
 			&message.ID, &message.ThreadID, &message.AuthorID, &message.Content,
 			&message.CreatedAt, &authorUsername, &message.Likes, &message.Dislikes,
@@ -211,4 +211,72 @@ func GetThreadCountByUser(userID int) (int, error) {
 	query := `SELECT COUNT(*) FROM threads WHERE author_id = ?`
 	err := config.DB.QueryRow(query, userID).Scan(&count)
 	return count, err
+}
+
+func GetMessagesByUser(userID int, filters MessageFilters) ([]Message, int, error) {
+	var messages []Message
+
+	// Count total messages by user
+	countQuery := `SELECT COUNT(*) FROM messages WHERE author_id = ?`
+	var total int
+	err := config.DB.QueryRow(countQuery, userID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Build main query
+	query := `
+		SELECT m.id, m.thread_id, m.author_id, m.content, m.created_at, u.username,
+		       COALESCE(SUM(CASE WHEN v.vote_type = 1 THEN 1 ELSE 0 END), 0) as likes,
+		       COALESCE(SUM(CASE WHEN v.vote_type = -1 THEN 1 ELSE 0 END), 0) as dislikes,
+		       COALESCE(SUM(v.vote_type), 0) as score
+		FROM messages m 
+		LEFT JOIN users u ON m.author_id = u.id 
+		LEFT JOIN votes v ON m.id = v.message_id
+		WHERE m.author_id = ?
+		GROUP BY m.id
+		ORDER BY m.created_at DESC
+	`
+
+	// Add pagination
+	args := []interface{}{userID}
+	if filters.Limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, filters.Limit)
+
+		if filters.Page > 0 {
+			offset := (filters.Page - 1) * filters.Limit
+			query += " OFFSET ?"
+			args = append(args, offset)
+		}
+	}
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var message Message
+		var authorUsername string
+
+		err := rows.Scan(
+			&message.ID, &message.ThreadID, &message.AuthorID, &message.Content,
+			&message.CreatedAt, &authorUsername, &message.Likes, &message.Dislikes,
+			&message.Score,
+		)
+		if err != nil {
+			continue
+		}
+
+		message.Author = &User{
+			ID:       message.AuthorID,
+			Username: authorUsername,
+		}
+
+		messages = append(messages, message)
+	}
+
+	return messages, total, nil
 }

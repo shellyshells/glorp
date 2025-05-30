@@ -36,6 +36,8 @@ func main() {
 	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/threads/create", controllers.CreateThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/threads/{id:[0-9]+}/edit", controllers.EditThreadViewHandler).Methods("GET")
+	protected.HandleFunc("/profile", controllers.ProfileHandler).Methods("GET")
+	protected.HandleFunc("/settings", controllers.SettingsHandler).Methods("GET")
 
 	// Admin routes
 	admin := r.PathPrefix("/admin").Subrouter()

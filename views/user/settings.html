@@ -1,0 +1,586 @@
+{{define "content"}}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1><i class="fas fa-cog"></i> User Settings</h1>
+        <p>Manage your account preferences and privacy settings</p>
+    </div>
+
+    <div class="settings-content">
+        <div class="settings-sidebar">
+            <div class="settings-nav">
+                <button class="settings-nav-item active" data-section="account">
+                    <i class="fas fa-user"></i> Account
+                </button>
+                <button class="settings-nav-item" data-section="profile">
+                    <i class="fas fa-id-card"></i> Profile
+                </button>
+                <button class="settings-nav-item" data-section="privacy">
+                    <i class="fas fa-shield-alt"></i> Privacy
+                </button>
+                <button class="settings-nav-item" data-section="notifications">
+                    <i class="fas fa-bell"></i> Notifications
+                </button>
+                <button class="settings-nav-item" data-section="security">
+                    <i class="fas fa-lock"></i> Security
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-main">
+            <!-- Account Settings -->
+            <div class="settings-section active" id="account-section">
+                <div class="settings-card">
+                    <h2>Account Information</h2>
+                    <form id="account-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" value="{{.User.Username}}" readonly>
+                            <small>Username cannot be changed</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" value="{{.User.Email}}" required>
+                            <small>Used for notifications and account recovery</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="role">Account Type</label>
+                            <input type="text" id="role" name="role" value="{{if eq .User.Role "admin"}}Administrator{{else}}Member{{end}}" readonly>
+                            <small>Contact an admin to change your role</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                        
+                        <div id="account-message" class="form-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Settings -->
+            <div class="settings-section" id="profile-section" style="display: none;">
+                <div class="settings-card">
+                    <h2>Profile Settings</h2>
+                    <form id="profile-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="display-name">Display Name</label>
+                            <input type="text" id="display-name" name="display_name" value="{{.User.Username}}" maxlength="50">
+                            <small>How your name appears to other users</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bio">Bio</label>
+                            <textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+                            <small>A brief description about yourself (500 characters max)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" id="location" name="location" maxlength="100" placeholder="Your location (optional)">
+                            <small>Where you're located (optional)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="website">Website</label>
+                            <input type="url" id="website" name="website" placeholder="https://yourwebsite.com">
+                            <small>Your personal website or social media (optional)</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Profile</button>
+                        </div>
+                        
+                        <div id="profile-message" class="form-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Privacy Settings -->
+            <div class="settings-section" id="privacy-section" style="display: none;">
+                <div class="settings-card">
+                    <h2>Privacy Settings</h2>
+                    <form id="privacy-form" class="settings-form">
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="show-email" name="show_email">
+                                <label for="show-email">Show email address on profile</label>
+                            </div>
+                            <small>Allow other users to see your email address</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="show-online" name="show_online" checked>
+                                <label for="show-online">Show online status</label>
+                            </div>
+                            <small>Let others see when you're online</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="allow-messages" name="allow_messages" checked>
+                                <label for="allow-messages">Allow private messages</label>
+                            </div>
+                            <small>Let other users send you private messages</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="public-profile" name="public_profile" checked>
+                                <label for="public-profile">Public profile</label>
+                            </div>
+                            <small>Make your profile visible to everyone</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Privacy Settings</button>
+                        </div>
+                        
+                        <div id="privacy-message" class="form-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="settings-section" id="notifications-section" style="display: none;">
+                <div class="settings-card">
+                    <h2>Notification Preferences</h2>
+                    <form id="notifications-form" class="settings-form">
+                        <div class="form-group">
+                            <h3>Email Notifications</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="email-replies" name="email_replies" checked>
+                                <label for="email-replies">Replies to my posts</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="email-mentions" name="email_mentions" checked>
+                                <label for="email-mentions">Mentions of my username</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="email-digest" name="email_digest">
+                                <label for="email-digest">Weekly digest</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <h3>Browser Notifications</h3>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="browser-replies" name="browser_replies">
+                                <label for="browser-replies">New replies</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="browser-messages" name="browser_messages">
+                                <label for="browser-messages">Private messages</label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                        </div>
+                        
+                        <div id="notifications-message" class="form-message" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="settings-section" id="security-section" style="display: none;">
+                <div class="settings-card">
+                    <h2>Security Settings</h2>
+                    <form id="security-form" class="settings-form">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" name="current_password">
+                            <small>Enter your current password to make changes</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" name="new_password" minlength="12">
+                            <small>Minimum 12 characters, 1 uppercase, 1 special character</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" name="confirm_password">
+                            <small>Re-enter your new password</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </div>
+                        
+                        <div id="security-message" class="form-message" style="display: none;"></div>
+                    </form>
+                </div>
+
+                <div class="settings-card danger-zone">
+                    <h2>Danger Zone</h2>
+                    <div class="danger-actions">
+                        <div class="danger-item">
+                            <div class="danger-info">
+                                <h3>Delete Account</h3>
+                                <p>Permanently delete your account and all associated data</p>
+                            </div>
+                            <button class="btn btn-danger" onclick="confirmDeleteAccount()">Delete Account</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Settings navigation
+document.querySelectorAll('.settings-nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        // Remove active class from all nav items and sections
+        document.querySelectorAll('.settings-nav-item').forEach(nav => nav.classList.remove('active'));
+        document.querySelectorAll('.settings-section').forEach(section => {
+            section.classList.remove('active');
+            section.style.display = 'none';
+        });
+        
+        // Add active class to clicked nav item
+        this.classList.add('active');
+        
+        // Show corresponding section
+        const sectionId = this.dataset.section + '-section';
+        const section = document.getElementById(sectionId);
+        section.classList.add('active');
+        section.style.display = 'block';
+    });
+});
+
+// Form handlers
+document.getElementById('account-form')?.addEventListener('submit', handleFormSubmit);
+document.getElementById('profile-form')?.addEventListener('submit', handleFormSubmit);
+document.getElementById('privacy-form')?.addEventListener('submit', handleFormSubmit);
+document.getElementById('notifications-form')?.addEventListener('submit', handleFormSubmit);
+document.getElementById('security-form')?.addEventListener('submit', handleSecurityFormSubmit);
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    const formId = e.target.id;
+    const messageId = formId.replace('-form', '-message');
+    const messageDiv = document.getElementById(messageId);
+    
+    // Show success message (placeholder - you would implement actual saving)
+    messageDiv.textContent = 'Settings saved successfully!';
+    messageDiv.className = 'form-message success';
+    messageDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 3000);
+}
+
+function handleSecurityFormSubmit(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const messageDiv = document.getElementById('security-message');
+    
+    if (!currentPassword) {
+        showFormMessage('security-message', 'Please enter your current password', 'error');
+        return;
+    }
+    
+    if (!newPassword) {
+        showFormMessage('security-message', 'Please enter a new password', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showFormMessage('security-message', 'New passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 12) {
+        showFormMessage('security-message', 'Password must be at least 12 characters long', 'error');
+        return;
+    }
+    
+    // Here you would implement actual password change
+    showFormMessage('security-message', 'Password changed successfully!', 'success');
+    
+    // Clear form
+    e.target.reset();
+}
+
+function showFormMessage(messageId, text, type) {
+    const messageDiv = document.getElementById(messageId);
+    messageDiv.textContent = text;
+    messageDiv.className = `form-message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
+}
+
+function confirmDeleteAccount() {
+    const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone.');
+    if (confirmed) {
+        const doubleConfirm = prompt('Type "DELETE" to confirm account deletion:');
+        if (doubleConfirm === 'DELETE') {
+            alert('Account deletion feature will be implemented soon.');
+        }
+    }
+}
+</script>
+
+<style>
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.settings-header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.settings-header h1 {
+    color: #1a1a1b;
+    margin-bottom: 8px;
+}
+
+.settings-header p {
+    color: #878a8c;
+}
+
+.settings-content {
+    display: flex;
+    gap: 20px;
+}
+
+.settings-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+}
+
+.settings-nav {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    overflow: hidden;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    color: #1a1a1b;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-bottom: 1px solid #edeff1;
+}
+
+.settings-nav-item:last-child {
+    border-bottom: none;
+}
+
+.settings-nav-item:hover {
+    background: #f6f7f8;
+}
+
+.settings-nav-item.active {
+    background: #0079d3;
+    color: white;
+}
+
+.settings-main {
+    flex: 1;
+}
+
+.settings-section {
+    display: none;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.settings-card h2 {
+    margin: 0 0 20px 0;
+    color: #1a1a1b;
+    font-size: 20px;
+}
+
+.settings-card h3 {
+    margin: 0 0 12px 0;
+    color: #1a1a1b;
+    font-size: 16px;
+}
+
+.settings-form .form-group {
+    margin-bottom: 24px;
+}
+
+.settings-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #1a1a1b;
+}
+
+.settings-form input,
+.settings-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.settings-form input:focus,
+.settings-form textarea:focus {
+    outline: none;
+    border-color: #0079d3;
+    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+}
+
+.settings-form input[readonly] {
+    background: #f6f7f8;
+    color: #878a8c;
+}
+
+.settings-form small {
+    display: block;
+    margin-top: 4px;
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.form-actions {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #edeff1;
+}
+
+.form-message {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.form-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.danger-zone {
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+}
+
+.danger-zone h2 {
+    color: #dc3545;
+}
+
+.danger-actions {
+    border-top: 1px solid #edeff1;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.danger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.danger-info h3 {
+    margin: 0 0 4px 0;
+    color: #dc3545;
+}
+
+.danger-info p {
+    margin: 0;
+    color: #878a8c;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .settings-content {
+        flex-direction: column;
+    }
+    
+    .settings-sidebar {
+        width: 100%;
+    }
+    
+    .settings-nav {
+        display: flex;
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+    
+    .settings-nav-item {
+        white-space: nowrap;
+        flex-shrink: 0;
+        border-bottom: none;
+        border-right: 1px solid #edeff1;
+    }
+    
+    .settings-nav-item:last-child {
+        border-right: none;
+    }
+    
+    .danger-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+</style>
+{{end}}
