@@ -18,7 +18,7 @@ func main() {
 	// Create router
 	r := mux.NewRouter()
 
-	// Static files
+	// Static files (including uploaded images)
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 
 	// Apply optional auth middleware to home and thread view routes
@@ -71,6 +71,10 @@ func main() {
 	apiProtected.HandleFunc("/threads/{id:[0-9]+}/messages", controllers.CreateMessageHandler).Methods("POST")
 	apiProtected.HandleFunc("/messages/{id:[0-9]+}", controllers.DeleteMessageHandler).Methods("DELETE")
 	apiProtected.HandleFunc("/messages/{id:[0-9]+}/vote", controllers.VoteMessageHandler).Methods("POST")
+
+	// Image upload API
+	apiProtected.HandleFunc("/upload/image", controllers.UploadImageHandler).Methods("POST")
+	apiProtected.HandleFunc("/upload/image/{filename}", controllers.DeleteImageHandler).Methods("DELETE")
 
 	// Profile API
 	apiProtected.HandleFunc("/profile/update", controllers.UpdateProfileHandler).Methods("POST")

@@ -63,6 +63,9 @@ func createTables() {
 		description TEXT NOT NULL,
 		author_id INTEGER NOT NULL,
 		status VARCHAR(20) DEFAULT 'open',
+		post_type VARCHAR(20) DEFAULT 'text',
+		image_url VARCHAR(500),
+		link_url VARCHAR(500),
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
@@ -107,6 +110,19 @@ func createTables() {
 		FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);
+
+	CREATE TABLE IF NOT EXISTS uploaded_files (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		filename VARCHAR(255) NOT NULL,
+		original_name VARCHAR(255) NOT NULL,
+		file_size INTEGER NOT NULL,
+		mime_type VARCHAR(100) NOT NULL,
+		user_id INTEGER NOT NULL,
+		thread_id INTEGER,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE SET NULL
+	);
 	`
 
 	if _, err := DB.Exec(schema); err != nil {
@@ -127,6 +143,9 @@ func runMigrations() {
 		"ALTER TABLE users ADD COLUMN allow_messages BOOLEAN DEFAULT TRUE",
 		"ALTER TABLE users ADD COLUMN public_profile BOOLEAN DEFAULT TRUE",
 		"ALTER TABLE users ADD COLUMN last_activity DATETIME",
+		"ALTER TABLE threads ADD COLUMN post_type VARCHAR(20) DEFAULT 'text'",
+		"ALTER TABLE threads ADD COLUMN image_url VARCHAR(500)",
+		"ALTER TABLE threads ADD COLUMN link_url VARCHAR(500)",
 	}
 
 	for _, migration := range migrations {
@@ -137,7 +156,36 @@ func runMigrations() {
 		}
 	}
 
-	// Update existing users with proper datetime values
+	// Update existing data
+	updateExistingData()
+
+	// Create indexes for better performance
+	indexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_threads_post_type ON threads(post_type)",
+		"CREATE INDEX IF NOT EXISTS idx_threads_author ON threads(author_id)",
+		"CREATE INDEX IF NOT EXISTS idx_threads_status ON threads(status)",
+		"CREATE INDEX IF NOT EXISTS idx_threads_created ON threads(created_at)",
+		"CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id)",
+		"CREATE INDEX IF NOT EXISTS idx_messages_author ON messages(author_id)",
+		"CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)",
+		"CREATE INDEX IF NOT EXISTS idx_votes_message ON votes(message_id)",
+		"CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_thread_tags_thread ON thread_tags(thread_id)",
+		"CREATE INDEX IF NOT EXISTS idx_thread_tags_tag ON thread_tags(tag_id)",
+		"CREATE INDEX IF NOT EXISTS idx_uploaded_files_user ON uploaded_files(user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_uploaded_files_thread ON uploaded_files(thread_id)",
+	}
+
+	for _, index := range indexes {
+		_, err := DB.Exec(index)
+		if err != nil {
+			log.Printf("Index creation note: %v", err)
+		}
+	}
+}
+
+func updateExistingData() {
+	// Update existing users with proper values
 	_, err := DB.Exec("UPDATE users SET display_name = username WHERE display_name IS NULL OR display_name = ''")
 	if err != nil {
 		log.Printf("Migration update error: %v", err)
@@ -145,6 +193,12 @@ func runMigrations() {
 
 	// Set last_activity to created_at for existing users where it's NULL
 	_, err = DB.Exec("UPDATE users SET last_activity = created_at WHERE last_activity IS NULL")
+	if err != nil {
+		log.Printf("Migration update error: %v", err)
+	}
+
+	// Update existing threads to have 'text' post_type
+	_, err = DB.Exec("UPDATE threads SET post_type = 'text' WHERE post_type IS NULL OR post_type = ''")
 	if err != nil {
 		log.Printf("Migration update error: %v", err)
 	}

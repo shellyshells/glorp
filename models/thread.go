@@ -8,16 +8,19 @@ import (
 )
 
 type Thread struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	AuthorID    int       `json:"author_id"`
-	Author      *User     `json:"author,omitempty"`
-	Status      string    `json:"status"` // open, closed, archived
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Tags        []Tag     `json:"tags,omitempty"`
-	MessageCount int      `json:"message_count"`
+	ID           int       `json:"id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	AuthorID     int       `json:"author_id"`
+	Author       *User     `json:"author,omitempty"`
+	Status       string    `json:"status"`              // open, closed, archived
+	PostType     string    `json:"post_type"`           // text, link, image
+	ImageURL     string    `json:"image_url,omitempty"` // For image posts
+	LinkURL      string    `json:"link_url,omitempty"`  // For link posts
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Tags         []Tag     `json:"tags,omitempty"`
+	MessageCount int       `json:"message_count"`
 }
 
 type ThreadFilters struct {
@@ -32,14 +35,18 @@ type ThreadFilters struct {
 }
 
 func CreateThread(title, description string, authorID int, tagIDs []int) (*Thread, error) {
+	return CreateThreadWithMedia(title, description, authorID, tagIDs, "text", "", "")
+}
+
+func CreateThreadWithMedia(title, description string, authorID int, tagIDs []int, postType, imageURL, linkURL string) (*Thread, error) {
 	tx, err := config.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	query := `INSERT INTO threads (title, description, author_id) VALUES (?, ?, ?)`
-	result, err := tx.Exec(query, title, description, authorID)
+	query := `INSERT INTO threads (title, description, author_id, post_type, image_url, link_url) VALUES (?, ?, ?, ?, ?, ?)`
+	result, err := tx.Exec(query, title, description, authorID, postType, imageURL, linkURL)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +58,8 @@ func CreateThread(title, description string, authorID int, tagIDs []int) (*Threa
 
 	// Add tags
 	for _, tagID := range tagIDs {
-		_, err = tx.Exec(`INSERT INTO thread_tags (thread_id, tag_id) VALUES (?, ?)`, 
-						threadID, tagID)
+		_, err = tx.Exec(`INSERT INTO thread_tags (thread_id, tag_id) VALUES (?, ?)`,
+			threadID, tagID)
 		if err != nil {
 			return nil, err
 		}
@@ -68,6 +75,7 @@ func CreateThread(title, description string, authorID int, tagIDs []int) (*Threa
 func GetThreadByID(id int) (*Thread, error) {
 	thread := &Thread{}
 	query := `SELECT t.id, t.title, t.description, t.author_id, t.status, 
+			         t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 			         t.created_at, t.updated_at, u.username,
 					 COUNT(m.id) as message_count
 			  FROM threads t 
@@ -75,14 +83,15 @@ func GetThreadByID(id int) (*Thread, error) {
 			  LEFT JOIN messages m ON t.id = m.thread_id
 			  WHERE t.id = ?
 			  GROUP BY t.id`
-	
+
 	var authorUsername string
 	err := config.DB.QueryRow(query, id).Scan(
 		&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
-		&thread.Status, &thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
+		&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
+		&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
 		&thread.MessageCount,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +172,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 	// Main query
 	selectQuery := `
 		SELECT DISTINCT t.id, t.title, t.description, t.author_id, t.status, 
+		       t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 		       t.created_at, t.updated_at, u.username,
 			   COUNT(DISTINCT m.id) as message_count
 	` + baseQuery + whereClause + ` 
@@ -174,7 +184,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 	if filters.Limit > 0 {
 		selectQuery += " LIMIT ?"
 		args = append(args, filters.Limit)
-		
+
 		if filters.Page > 0 {
 			offset := (filters.Page - 1) * filters.Limit
 			selectQuery += " OFFSET ?"
@@ -191,10 +201,11 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 	for rows.Next() {
 		var thread Thread
 		var authorUsername string
-		
+
 		err := rows.Scan(
 			&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
-			&thread.Status, &thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
+			&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
+			&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
 			&thread.MessageCount,
 		)
 		if err != nil {
@@ -216,6 +227,10 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 }
 
 func UpdateThread(threadID int, title, description string, tagIDs []int) error {
+	return UpdateThreadWithMedia(threadID, title, description, "", "", tagIDs)
+}
+
+func UpdateThreadWithMedia(threadID int, title, description, imageURL, linkURL string, tagIDs []int) error {
 	tx, err := config.DB.Begin()
 	if err != nil {
 		return err
@@ -223,9 +238,9 @@ func UpdateThread(threadID int, title, description string, tagIDs []int) error {
 	defer tx.Rollback()
 
 	// Update thread
-	query := `UPDATE threads SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP 
+	query := `UPDATE threads SET title = ?, description = ?, image_url = ?, link_url = ?, updated_at = CURRENT_TIMESTAMP 
 			  WHERE id = ?`
-	_, err = tx.Exec(query, title, description, threadID)
+	_, err = tx.Exec(query, title, description, imageURL, linkURL, threadID)
 	if err != nil {
 		return err
 	}
@@ -238,8 +253,8 @@ func UpdateThread(threadID int, title, description string, tagIDs []int) error {
 
 	// Add new tags
 	for _, tagID := range tagIDs {
-		_, err = tx.Exec(`INSERT INTO thread_tags (thread_id, tag_id) VALUES (?, ?)`, 
-						threadID, tagID)
+		_, err = tx.Exec(`INSERT INTO thread_tags (thread_id, tag_id) VALUES (?, ?)`,
+			threadID, tagID)
 		if err != nil {
 			return err
 		}
@@ -266,7 +281,7 @@ func GetThreadTags(threadID int) ([]Tag, error) {
 	query := `SELECT t.id, t.name FROM tags t 
 			  JOIN thread_tags tt ON t.id = tt.tag_id 
 			  WHERE tt.thread_id = ?`
-	
+
 	rows, err := config.DB.Query(query, threadID)
 	if err != nil {
 		return tags, err

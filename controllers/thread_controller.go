@@ -228,6 +228,9 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Tags        []int  `json:"tags"`
+		PostType    string `json:"post_type"` // text, link, image
+		ImageURL    string `json:"image_url"` // For image posts
+		LinkURL     string `json:"link_url"`  // For link posts
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -238,10 +241,12 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 	// Sanitize input
 	req.Title = utils.SanitizeString(req.Title)
 	req.Description = utils.SanitizeString(req.Description)
+	req.ImageURL = utils.SanitizeString(req.ImageURL)
+	req.LinkURL = utils.SanitizeString(req.LinkURL)
 
 	// Validate input
-	if req.Title == "" || req.Description == "" {
-		http.Error(w, "Title and description are required", http.StatusBadRequest)
+	if req.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
 
@@ -250,8 +255,39 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, err := models.CreateThread(req.Title, req.Description, user.ID, req.Tags)
+	// Set default post type
+	if req.PostType == "" {
+		req.PostType = "text"
+	}
+
+	// Validate post type
+	validPostTypes := map[string]bool{
+		"text":  true,
+		"link":  true,
+		"image": true,
+	}
+
+	if !validPostTypes[req.PostType] {
+		http.Error(w, "Invalid post type", http.StatusBadRequest)
+		return
+	}
+
+	// For text posts, description is optional but for link posts we need either description or URL
+	if req.PostType == "link" && req.LinkURL == "" && req.Description == "" {
+		http.Error(w, "Link posts require either a URL or description", http.StatusBadRequest)
+		return
+	}
+
+	// For image posts, we need either an image URL or description
+	if req.PostType == "image" && req.ImageURL == "" && req.Description == "" {
+		http.Error(w, "Image posts require either an image or description", http.StatusBadRequest)
+		return
+	}
+
+	// Create the thread with media support
+	thread, err := models.CreateThreadWithMedia(req.Title, req.Description, user.ID, req.Tags, req.PostType, req.ImageURL, req.LinkURL)
 	if err != nil {
+		log.Printf("Error creating thread: %v", err)
 		http.Error(w, "Failed to create thread: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -288,6 +324,8 @@ func UpdateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Tags        []int  `json:"tags"`
+		ImageURL    string `json:"image_url"`
+		LinkURL     string `json:"link_url"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -298,10 +336,12 @@ func UpdateThreadHandler(w http.ResponseWriter, r *http.Request) {
 	// Sanitize input
 	req.Title = utils.SanitizeString(req.Title)
 	req.Description = utils.SanitizeString(req.Description)
+	req.ImageURL = utils.SanitizeString(req.ImageURL)
+	req.LinkURL = utils.SanitizeString(req.LinkURL)
 
 	// Validate input
-	if req.Title == "" || req.Description == "" {
-		http.Error(w, "Title and description are required", http.StatusBadRequest)
+	if req.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
 
@@ -310,7 +350,7 @@ func UpdateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.UpdateThread(threadID, req.Title, req.Description, req.Tags)
+	err = models.UpdateThreadWithMedia(threadID, req.Title, req.Description, req.ImageURL, req.LinkURL, req.Tags)
 	if err != nil {
 		http.Error(w, "Failed to update thread: "+err.Error(), http.StatusInternalServerError)
 		return
