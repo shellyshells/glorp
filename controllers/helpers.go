@@ -3,6 +3,7 @@ package controllers
 import (
 	"goforum/models"
 	"html/template"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -114,5 +115,6 @@ func formatDuration(count int, unit string) string {
 	if count == 1 {
 		return "1 " + unit + " ago"
 	}
-	return string(rune(count)) + " " + unit + "s ago"
+	// FIX: Convert int to string properly
+	return strconv.Itoa(count) + " " + unit + "s ago"
 }

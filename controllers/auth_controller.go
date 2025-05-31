@@ -47,6 +47,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("JSON decode error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -91,6 +92,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Create user
 	user, err := models.CreateUser(req.Username, req.Email, hashedPassword)
 	if err != nil {
+		log.Printf("Create user error: %v", err)
 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -98,6 +100,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Generate JWT token
 	token, err := utils.GenerateJWT(user.ID, user.Username, user.Role)
 	if err != nil {
+		log.Printf("JWT generation error: %v", err)
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
@@ -134,6 +137,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("JSON decode error: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -143,6 +147,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validate input
 	if req.Identifier == "" || req.Password == "" {
+		log.Printf("Login validation failed: identifier=%s, password_length=%d", req.Identifier, len(req.Password))
 		http.Error(w, "All fields are required", http.StatusBadRequest)
 		return
 	}
@@ -150,18 +155,31 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Get user by identifier (username or email)
 	user, err := models.GetUserByIdentifier(req.Identifier)
 	if err != nil {
+		log.Printf("User lookup error for identifier '%s': %v", req.Identifier, err)
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	// Check if user is banned
 	if user.Banned {
+		log.Printf("Banned user login attempt: %s", user.Username)
 		http.Error(w, "Account has been banned", http.StatusForbidden)
 		return
 	}
 
+	// DEBUG: Log password verification details
+	log.Printf("🔒 DEBUG Password verification for user '%s':", user.Username)
+	log.Printf("   - Input password: '%s'", req.Password)
+	log.Printf("   - Stored hash: '%s'", user.PasswordHash)
+
+	// Generate hash for the input password to compare
+	inputPasswordHash := utils.HashPassword(req.Password)
+	log.Printf("   - Generated hash: '%s'", inputPasswordHash)
+	log.Printf("   - Hashes match: %v", inputPasswordHash == user.PasswordHash)
+
 	// Verify password
 	if !utils.VerifyPassword(req.Password, user.PasswordHash) {
+		log.Printf("Password verification failed for user: %s", user.Username)
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -169,6 +187,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Generate JWT token
 	token, err := utils.GenerateJWT(user.ID, user.Username, user.Role)
 	if err != nil {
+		log.Printf("JWT generation error for user %s: %v", user.Username, err)
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
@@ -183,7 +202,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Update last login
-	models.UpdateUserLastLogin(user.ID)
+	err = models.UpdateUserLastLogin(user.ID)
+	if err != nil {
+		log.Printf("Failed to update last login for user %s: %v", user.Username, err)
+		// Don't fail the login for this
+	}
+
+	log.Printf("Successful login for user: %s", user.Username)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{

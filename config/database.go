@@ -1,7 +1,9 @@
 package config
 
 import (
+	"crypto/sha512"
 	"database/sql"
+	"fmt"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -21,6 +23,7 @@ func InitDatabase() {
 	}
 
 	createTables()
+	runMigrations()
 	seedDatabase()
 	log.Println("Database initialized successfully")
 }
@@ -35,7 +38,17 @@ func createTables() {
 		role VARCHAR(20) DEFAULT 'user',
 		banned BOOLEAN DEFAULT FALSE,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		last_login DATETIME
+		last_login DATETIME,
+		display_name VARCHAR(100),
+		bio TEXT,
+		location VARCHAR(100),
+		website VARCHAR(255),
+		avatar_url VARCHAR(255),
+		show_email BOOLEAN DEFAULT FALSE,
+		show_online BOOLEAN DEFAULT TRUE,
+		allow_messages BOOLEAN DEFAULT TRUE,
+		public_profile BOOLEAN DEFAULT TRUE,
+		last_activity DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
 	CREATE TABLE IF NOT EXISTS tags (
@@ -83,6 +96,17 @@ func createTables() {
 		FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);
+
+	CREATE TABLE IF NOT EXISTS thread_votes (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		thread_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		vote_type INTEGER NOT NULL, -- 1 for upvote, -1 for downvote
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(thread_id, user_id),
+		FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
 	`
 
 	if _, err := DB.Exec(schema); err != nil {
@@ -90,22 +114,71 @@ func createTables() {
 	}
 }
 
+func runMigrations() {
+	// Check if we need to add new columns to existing tables
+	migrations := []string{
+		"ALTER TABLE users ADD COLUMN display_name VARCHAR(100)",
+		"ALTER TABLE users ADD COLUMN bio TEXT",
+		"ALTER TABLE users ADD COLUMN location VARCHAR(100)",
+		"ALTER TABLE users ADD COLUMN website VARCHAR(255)",
+		"ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255)",
+		"ALTER TABLE users ADD COLUMN show_email BOOLEAN DEFAULT FALSE",
+		"ALTER TABLE users ADD COLUMN show_online BOOLEAN DEFAULT TRUE",
+		"ALTER TABLE users ADD COLUMN allow_messages BOOLEAN DEFAULT TRUE",
+		"ALTER TABLE users ADD COLUMN public_profile BOOLEAN DEFAULT TRUE",
+		"ALTER TABLE users ADD COLUMN last_activity DATETIME",
+	}
+
+	for _, migration := range migrations {
+		_, err := DB.Exec(migration)
+		if err != nil {
+			// Column might already exist, continue
+			log.Printf("Migration note: %v", err)
+		}
+	}
+
+	// Update existing users with proper datetime values
+	_, err := DB.Exec("UPDATE users SET display_name = username WHERE display_name IS NULL OR display_name = ''")
+	if err != nil {
+		log.Printf("Migration update error: %v", err)
+	}
+
+	// Set last_activity to created_at for existing users where it's NULL
+	_, err = DB.Exec("UPDATE users SET last_activity = created_at WHERE last_activity IS NULL")
+	if err != nil {
+		log.Printf("Migration update error: %v", err)
+	}
+}
+
+// Helper function to hash password using SHA512 (same as utils.HashPassword)
+func hashPassword(password string) string {
+	hash := sha512.Sum512([]byte(password))
+	return fmt.Sprintf("%x", hash)
+}
+
 func seedDatabase() {
 	// Check if admin user exists
 	var count int
 	err := DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = 'admin'").Scan(&count)
 	if err != nil {
-		log.Fatal("Failed to check admin user:", err)
+		log.Printf("Failed to check admin user: %v", err)
+		return
 	}
 
 	if count == 0 {
-		// Create admin user with hashed password
-		hashedPassword := "ba3253876aed6bc22d4a6ff53d8406c6ad864195ed144ab5c87621b6c233b548baeae6956df346ec8c17f5ea10f35ee3cbc514797ed7ddd3145464e2a0bab413" // AdminPassword123!
-		
-		_, err = DB.Exec(`INSERT INTO users (username, email, password_hash, role) 
-						 VALUES ('admin', 'admin@forum.com', ?, 'admin')`, hashedPassword)
+		// Create admin user with properly hashed password
+		adminPassword := "AdminPassword123!"
+		hashedPassword := hashPassword(adminPassword)
+
+		log.Printf("🔑 Creating admin user with password: '%s'", adminPassword)
+		log.Printf("🔒 Generated hash: '%s'", hashedPassword)
+
+		_, err = DB.Exec(`INSERT INTO users (username, display_name, email, password_hash, role, created_at, last_activity) 
+						 VALUES ('admin', 'admin', 'admin@forum.com', ?, 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, hashedPassword)
 		if err != nil {
-			log.Fatal("Failed to create admin user:", err)
+			log.Printf("Failed to create admin user: %v", err)
+		} else {
+			log.Println("✅ Admin user created successfully")
 		}
 
 		// Insert some default tags
@@ -118,5 +191,46 @@ func seedDatabase() {
 		}
 
 		log.Println("Database seeded with admin user and default tags")
+	} else {
+		log.Println("✅ Admin user already exists")
+
+		// Let's verify the existing admin user's password hash
+		var existingHash string
+		err = DB.QueryRow("SELECT password_hash FROM users WHERE username = 'admin'").Scan(&existingHash)
+		if err == nil {
+			adminPassword := "AdminPassword123!"
+			correctHash := hashPassword(adminPassword)
+			log.Printf("🔍 Existing admin hash: '%s'", existingHash)
+			log.Printf("🔍 Correct hash should be: '%s'", correctHash)
+			log.Printf("🔍 Hash matches: %v", existingHash == correctHash)
+
+			// If the hash doesn't match, update it
+			if existingHash != correctHash {
+				log.Printf("🔧 Updating admin password hash...")
+				_, err = DB.Exec("UPDATE users SET password_hash = ? WHERE username = 'admin'", correctHash)
+				if err != nil {
+					log.Printf("Failed to update admin password: %v", err)
+				} else {
+					log.Printf("✅ Admin password hash updated")
+				}
+			}
+		}
+	}
+
+	// Debug: Check if users exist
+	rows, err := DB.Query("SELECT username, email FROM users")
+	if err != nil {
+		log.Printf("Failed to query users: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	log.Println("📋 Current users in database:")
+	for rows.Next() {
+		var username, email string
+		if err := rows.Scan(&username, &email); err != nil {
+			continue
+		}
+		log.Printf("  - %s (%s)", username, email)
 	}
 }

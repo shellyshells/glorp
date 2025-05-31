@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"goforum/config"
@@ -41,7 +42,8 @@ type UserProfile struct {
 }
 
 func CreateUser(username, email, passwordHash string) (*User, error) {
-	query := `INSERT INTO users (username, display_name, email, password_hash, last_activity) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
+	query := `INSERT INTO users (username, display_name, email, password_hash, created_at, last_activity) 
+			  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
 	result, err := config.DB.Exec(query, username, username, email, passwordHash)
 	if err != nil {
 		return nil, err
@@ -57,21 +59,37 @@ func CreateUser(username, email, passwordHash string) (*User, error) {
 
 func GetUserByID(id int) (*User, error) {
 	user := &User{}
-	query := `SELECT id, username, COALESCE(display_name, username), email, password_hash, role, banned, 
-			         COALESCE(bio, ''), COALESCE(location, ''), COALESCE(website, ''), COALESCE(avatar_url, ''),
-			         COALESCE(show_email, 0), COALESCE(show_online, 1), COALESCE(allow_messages, 1), COALESCE(public_profile, 1),
-			         created_at, last_login, COALESCE(last_activity, created_at)
+
+	log.Printf("🔍 Looking for user with ID: %d", id)
+
+	query := `SELECT id, username, 
+			         COALESCE(display_name, username) as display_name, 
+			         email, password_hash, 
+			         COALESCE(role, 'user') as role, 
+			         COALESCE(banned, 0) as banned,
+			         COALESCE(bio, '') as bio, 
+			         COALESCE(location, '') as location, 
+			         COALESCE(website, '') as website, 
+			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(show_email, 0) as show_email, 
+			         COALESCE(show_online, 1) as show_online, 
+			         COALESCE(allow_messages, 1) as allow_messages, 
+			         COALESCE(public_profile, 1) as public_profile,
+			         created_at, last_login, 
+			         COALESCE(last_activity, created_at) as last_activity
 			  FROM users WHERE id = ?`
 
 	var lastLogin sql.NullTime
+	var lastActivityStr sql.NullString
 	err := config.DB.QueryRow(query, id).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
 		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
-		&user.CreatedAt, &lastLogin, &user.LastActivity,
+		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
 	if err != nil {
+		log.Printf("❌ Error scanning user with ID %d: %v", id, err)
 		return nil, err
 	}
 
@@ -79,26 +97,56 @@ func GetUserByID(id int) (*User, error) {
 		user.LastLogin = &lastLogin.Time
 	}
 
+	// Parse last_activity from string
+	if lastActivityStr.Valid && lastActivityStr.String != "" {
+		if parsedTime, err := time.Parse("2006-01-02 15:04:05", lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else if parsedTime, err := time.Parse(time.RFC3339, lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else {
+			// Fallback to created_at if parsing fails
+			user.LastActivity = user.CreatedAt
+		}
+	} else {
+		user.LastActivity = user.CreatedAt
+	}
+
+	log.Printf("✅ Successfully loaded user: %s (ID: %d)", user.Username, user.ID)
 	return user, nil
 }
 
 func GetUserByUsername(username string) (*User, error) {
-	user := &User{}
-	query := `SELECT id, username, COALESCE(display_name, username), email, password_hash, role, banned, 
-			         COALESCE(bio, ''), COALESCE(location, ''), COALESCE(website, ''), COALESCE(avatar_url, ''),
-			         COALESCE(show_email, 0), COALESCE(show_online, 1), COALESCE(allow_messages, 1), COALESCE(public_profile, 1),
-			         created_at, last_login, COALESCE(last_activity, created_at)
+	log.Printf("🔍 Looking for user with username: '%s'", username)
+
+	query := `SELECT id, username, 
+			         COALESCE(display_name, username) as display_name, 
+			         email, password_hash, 
+			         COALESCE(role, 'user') as role, 
+			         COALESCE(banned, 0) as banned,
+			         COALESCE(bio, '') as bio, 
+			         COALESCE(location, '') as location, 
+			         COALESCE(website, '') as website, 
+			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(show_email, 0) as show_email, 
+			         COALESCE(show_online, 1) as show_online, 
+			         COALESCE(allow_messages, 1) as allow_messages, 
+			         COALESCE(public_profile, 1) as public_profile,
+			         created_at, last_login, 
+			         COALESCE(last_activity, created_at) as last_activity
 			  FROM users WHERE username = ?`
 
+	user := &User{}
 	var lastLogin sql.NullTime
+	var lastActivityStr sql.NullString
 	err := config.DB.QueryRow(query, username).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
 		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
-		&user.CreatedAt, &lastLogin, &user.LastActivity,
+		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
 	if err != nil {
+		log.Printf("❌ Error scanning user with username '%s': %v", username, err)
 		return nil, err
 	}
 
@@ -106,26 +154,56 @@ func GetUserByUsername(username string) (*User, error) {
 		user.LastLogin = &lastLogin.Time
 	}
 
+	// Parse last_activity from string
+	if lastActivityStr.Valid && lastActivityStr.String != "" {
+		if parsedTime, err := time.Parse("2006-01-02 15:04:05", lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else if parsedTime, err := time.Parse(time.RFC3339, lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else {
+			// Fallback to created_at if parsing fails
+			user.LastActivity = user.CreatedAt
+		}
+	} else {
+		user.LastActivity = user.CreatedAt
+	}
+
+	log.Printf("✅ Successfully loaded user: %s (ID: %d)", user.Username, user.ID)
 	return user, nil
 }
 
 func GetUserByEmail(email string) (*User, error) {
-	user := &User{}
-	query := `SELECT id, username, COALESCE(display_name, username), email, password_hash, role, banned, 
-			         COALESCE(bio, ''), COALESCE(location, ''), COALESCE(website, ''), COALESCE(avatar_url, ''),
-			         COALESCE(show_email, 0), COALESCE(show_online, 1), COALESCE(allow_messages, 1), COALESCE(public_profile, 1),
-			         created_at, last_login, COALESCE(last_activity, created_at)
+	log.Printf("🔍 Looking for user with email: '%s'", email)
+
+	query := `SELECT id, username, 
+			         COALESCE(display_name, username) as display_name, 
+			         email, password_hash, 
+			         COALESCE(role, 'user') as role, 
+			         COALESCE(banned, 0) as banned,
+			         COALESCE(bio, '') as bio, 
+			         COALESCE(location, '') as location, 
+			         COALESCE(website, '') as website, 
+			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(show_email, 0) as show_email, 
+			         COALESCE(show_online, 1) as show_online, 
+			         COALESCE(allow_messages, 1) as allow_messages, 
+			         COALESCE(public_profile, 1) as public_profile,
+			         created_at, last_login, 
+			         COALESCE(last_activity, created_at) as last_activity
 			  FROM users WHERE email = ?`
 
+	user := &User{}
 	var lastLogin sql.NullTime
+	var lastActivityStr sql.NullString
 	err := config.DB.QueryRow(query, email).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
 		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
-		&user.CreatedAt, &lastLogin, &user.LastActivity,
+		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
 	if err != nil {
+		log.Printf("❌ Error scanning user with email '%s': %v", email, err)
 		return nil, err
 	}
 
@@ -133,13 +211,31 @@ func GetUserByEmail(email string) (*User, error) {
 		user.LastLogin = &lastLogin.Time
 	}
 
+	// Parse last_activity from string
+	if lastActivityStr.Valid && lastActivityStr.String != "" {
+		if parsedTime, err := time.Parse("2006-01-02 15:04:05", lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else if parsedTime, err := time.Parse(time.RFC3339, lastActivityStr.String); err == nil {
+			user.LastActivity = parsedTime
+		} else {
+			// Fallback to created_at if parsing fails
+			user.LastActivity = user.CreatedAt
+		}
+	} else {
+		user.LastActivity = user.CreatedAt
+	}
+
+	log.Printf("✅ Successfully loaded user: %s (ID: %d)", user.Username, user.ID)
 	return user, nil
 }
 
 func GetUserByIdentifier(identifier string) (*User, error) {
+	log.Printf("🔍 Looking for user with identifier: '%s'", identifier)
+
 	// Try username first, then email
 	user, err := GetUserByUsername(identifier)
 	if err != nil {
+		log.Printf("Username lookup failed, trying email...")
 		user, err = GetUserByEmail(identifier)
 	}
 	return user, err
