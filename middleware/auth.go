@@ -12,14 +12,6 @@ type contextKey string
 
 const UserContextKey contextKey = "user"
 
-type UserContext struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	Email    string `json:"email"`
-	Banned   bool   `json:"banned"`
-}
-
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check for JWT token in cookie
@@ -54,7 +46,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Get user from database to check if banned and get latest info
+		// Get full user from database to check if banned and get latest info
 		user, err := models.GetUserByID(claims.UserID)
 		if err != nil {
 			if isAPIRequest(r) {
@@ -83,16 +75,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user info to context
-		userCtx := UserContext{
-			ID:       user.ID,
-			Username: user.Username,
-			Role:     user.Role,
-			Email:    user.Email,
-			Banned:   user.Banned,
-		}
-
-		ctx := context.WithValue(r.Context(), UserContextKey, userCtx)
+		// Add FULL user object to context (not UserContext)
+		ctx := context.WithValue(r.Context(), UserContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -105,18 +89,11 @@ func OptionalAuthMiddleware(next http.Handler) http.Handler {
 			// Validate JWT token
 			claims, err := utils.ValidateJWT(cookie.Value)
 			if err == nil {
-				// Get user from database
+				// Get full user from database
 				user, err := models.GetUserByID(claims.UserID)
 				if err == nil && !user.Banned {
-					// Add user info to context
-					userCtx := UserContext{
-						ID:       user.ID,
-						Username: user.Username,
-						Role:     user.Role,
-						Email:    user.Email,
-						Banned:   user.Banned,
-					}
-					ctx := context.WithValue(r.Context(), UserContextKey, userCtx)
+					// Add FULL user object to context
+					ctx := context.WithValue(r.Context(), UserContextKey, user)
 					r = r.WithContext(ctx)
 				}
 			}
@@ -126,9 +103,9 @@ func OptionalAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func GetUserFromContext(r *http.Request) *UserContext {
-	if user, ok := r.Context().Value(UserContextKey).(UserContext); ok {
-		return &user
+func GetUserFromContext(r *http.Request) *models.User {
+	if user, ok := r.Context().Value(UserContextKey).(*models.User); ok {
+		return user
 	}
 	return nil
 }
@@ -136,5 +113,5 @@ func GetUserFromContext(r *http.Request) *UserContext {
 func isAPIRequest(r *http.Request) bool {
 	return r.Header.Get("Content-Type") == "application/json" ||
 		r.Header.Get("Accept") == "application/json" ||
-		r.URL.Path[:4] == "/api"
+		(len(r.URL.Path) >= 4 && r.URL.Path[:4] == "/api")
 }

@@ -13,110 +13,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	currentUser := middleware.GetUserFromContext(r)
-	if currentUser == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	// Get user to display (could be current user or someone else)
-	vars := mux.Vars(r)
-	username := vars["username"]
-
-	var user *models.User
-	var err error
-
-	if username != "" {
-		// Viewing someone else's profile
-		user, err = models.GetUserByUsername(username)
-		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-	} else {
-		// Viewing own profile
-		user, err = models.GetUserByID(currentUser.ID)
-		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-	}
-
-	// Update current user's activity
-	models.UpdateUserActivity(currentUser.ID)
-
-	// Get user's threads
-	threadFilters := models.ThreadFilters{
-		AuthorID: user.ID,
-		Limit:    20,
-		Page:     1,
-	}
-	userThreads, _, _ := models.GetThreads(threadFilters)
-
-	// Get user's messages
-	messageFilters := models.MessageFilters{
-		UserID: user.ID,
-		Limit:  20,
-		Page:   1,
-	}
-	userMessages, _, _ := models.GetMessagesByUser(user.ID, messageFilters)
-
-	// Get user stats
-	threadCount, _ := models.GetThreadCountByUser(user.ID)
-	messageCount, _ := models.GetMessageCountByUser(user.ID)
-
-	// Calculate karma (this is a simplified version)
-	postKarma := calculatePostKarma(userThreads)
-	commentKarma := calculateCommentKarma(userMessages)
-
-	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/user/profile.html"))
-	data := map[string]interface{}{
-		"Title":        "u/" + user.Username + " - Profile",
-		"Page":         "profile",
-		"User":         user,
-		"CurrentUser":  currentUser,
-		"UserThreads":  userThreads,
-		"UserMessages": userMessages,
-		"ThreadCount":  threadCount,
-		"MessageCount": messageCount,
-		"PostKarma":    postKarma,
-		"CommentKarma": commentKarma,
-	}
-
-	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
-		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-}
-
-func SettingsHandler(w http.ResponseWriter, r *http.Request) {
-	user := middleware.GetUserFromContext(r)
-	if user == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	// Get fresh user data
-	freshUser, err := models.GetUserByID(user.ID)
-	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/user/settings.html"))
-	data := map[string]interface{}{
-		"Title": "Settings - GoForum",
-		"Page":  "settings",
-		"User":  freshUser,
-	}
-
-	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
-		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-}
-
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -224,6 +120,110 @@ func UpdateAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"message": "Avatar style updated successfully",
 	})
+}
+
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	currentUser := middleware.GetUserFromContext(r)
+	if currentUser == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	// Get user to display (could be current user or someone else)
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	var user *models.User
+	var err error
+
+	if username != "" {
+		// Viewing someone else's profile
+		user, err = models.GetUserByUsername(username)
+		if err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+	} else {
+		// Viewing own profile
+		user, err = models.GetUserByID(currentUser.ID)
+		if err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+	}
+
+	// Update current user's activity
+	models.UpdateUserActivity(currentUser.ID)
+
+	// Get user's threads
+	threadFilters := models.ThreadFilters{
+		AuthorID: user.ID,
+		Limit:    20,
+		Page:     1,
+	}
+	userThreads, _, _ := models.GetThreads(threadFilters)
+
+	// Get user's messages
+	messageFilters := models.MessageFilters{
+		UserID: user.ID,
+		Limit:  20,
+		Page:   1,
+	}
+	userMessages, _, _ := models.GetMessagesByUser(user.ID, messageFilters)
+
+	// Get user stats
+	threadCount, _ := models.GetThreadCountByUser(user.ID)
+	messageCount, _ := models.GetMessageCountByUser(user.ID)
+
+	// Calculate karma (this is a simplified version)
+	postKarma := calculatePostKarma(userThreads)
+	commentKarma := calculateCommentKarma(userMessages)
+
+	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/user/profile.html"))
+	data := map[string]interface{}{
+		"Title":        "u/" + user.Username + " - Profile",
+		"Page":         "profile",
+		"User":         user,
+		"CurrentUser":  currentUser,
+		"UserThreads":  userThreads,
+		"UserMessages": userMessages,
+		"ThreadCount":  threadCount,
+		"MessageCount": messageCount,
+		"PostKarma":    postKarma,
+		"CommentKarma": commentKarma,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+func SettingsHandler(w http.ResponseWriter, r *http.Request) {
+	user := middleware.GetUserFromContext(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	// Get fresh user data
+	freshUser, err := models.GetUserByID(user.ID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/user/settings.html"))
+	data := map[string]interface{}{
+		"Title": "Settings - GoForum",
+		"Page":  "settings",
+		"User":  freshUser,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
+		log.Printf("Template execution error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func UserByUsernameHandler(w http.ResponseWriter, r *http.Request) {
