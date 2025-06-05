@@ -188,8 +188,6 @@ func UpdateAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For now, we'll just generate avatar URLs based on style
-	// In a real app, you'd handle file uploads here
 	var req struct {
 		Style string `json:"style"`
 	}
@@ -199,20 +197,32 @@ func UpdateAvatarHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate avatar URL based on style
-	avatarURL := generateAvatarURL(user.Username, req.Style)
+	// Validate avatar style
+	validStyles := []string{"default", "red", "blue", "green", "purple", "orange", "pink", "teal", "admin"}
+	isValid := false
+	for _, style := range validStyles {
+		if req.Style == style {
+			isValid = true
+			break
+		}
+	}
 
-	err := models.UpdateUserAvatar(user.ID, avatarURL)
+	if !isValid {
+		http.Error(w, "Invalid avatar style", http.StatusBadRequest)
+		return
+	}
+
+	err := models.UpdateUserAvatarStyle(user.ID, req.Style)
 	if err != nil {
-		log.Printf("Failed to update avatar: %v", err)
-		http.Error(w, "Failed to update avatar", http.StatusInternalServerError)
+		log.Printf("Failed to update avatar style: %v", err)
+		http.Error(w, "Failed to update avatar style", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
-		"message": "Avatar updated successfully",
+		"message": "Avatar style updated successfully",
 	})
 }
 
@@ -307,21 +317,4 @@ func calculateCommentKarma(messages []models.Message) int {
 func isValidURL(url string) bool {
 	// Simple URL validation
 	return len(url) > 0 && (len(url) < 4 || url[:4] == "http")
-}
-
-func generateAvatarURL(username, style string) string {
-	// Generate a style-based avatar URL
-	// In a real app, you might use a service like Gravatar or generate actual images
-	switch style {
-	case "gradient1":
-		return "/static/avatars/gradient1/" + username
-	case "gradient2":
-		return "/static/avatars/gradient2/" + username
-	case "gradient3":
-		return "/static/avatars/gradient3/" + username
-	case "gradient4":
-		return "/static/avatars/gradient4/" + username
-	default:
-		return ""
-	}
 }

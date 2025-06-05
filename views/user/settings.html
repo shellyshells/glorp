@@ -14,6 +14,9 @@
                 <button class="settings-nav-item" data-section="profile">
                     <i class="fas fa-id-card"></i> Profile
                 </button>
+                <button class="settings-nav-item" data-section="avatar">
+                    <i class="fas fa-user-circle"></i> Avatar
+                </button>
                 <button class="settings-nav-item" data-section="privacy">
                     <i class="fas fa-shield-alt"></i> Privacy
                 </button>
@@ -66,25 +69,25 @@
                     <form id="profile-form" class="settings-form">
                         <div class="form-group">
                             <label for="display-name">Display Name</label>
-                            <input type="text" id="display-name" name="display_name" value="{{.User.Username}}" maxlength="50">
+                            <input type="text" id="display-name" name="display_name" value="{{if .User.DisplayName}}{{.User.DisplayName}}{{else}}{{.User.Username}}{{end}}" maxlength="50">
                             <small>How your name appears to other users</small>
                         </div>
                         
                         <div class="form-group">
                             <label for="bio">Bio</label>
-                            <textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+                            <textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Tell us about yourself...">{{.User.Bio}}</textarea>
                             <small>A brief description about yourself (500 characters max)</small>
                         </div>
                         
                         <div class="form-group">
                             <label for="location">Location</label>
-                            <input type="text" id="location" name="location" maxlength="100" placeholder="Your location (optional)">
+                            <input type="text" id="location" name="location" value="{{.User.Location}}" maxlength="100" placeholder="Your location (optional)">
                             <small>Where you're located (optional)</small>
                         </div>
 
                         <div class="form-group">
                             <label for="website">Website</label>
-                            <input type="url" id="website" name="website" placeholder="https://yourwebsite.com">
+                            <input type="url" id="website" name="website" value="{{.User.Website}}" placeholder="https://yourwebsite.com">
                             <small>Your personal website or social media (optional)</small>
                         </div>
 
@@ -97,6 +100,79 @@
                 </div>
             </div>
 
+            <!-- Avatar Settings -->
+            <div class="settings-section" id="avatar-section" style="display: none;">
+                <div class="settings-card">
+                    <h2>Avatar Customization</h2>
+                    
+                    <div class="current-avatar-display">
+                        <div class="user-avatar {{getAvatarClass (getAvatarStyle .User)}}">
+                            {{if .User.AvatarURL}}
+                                <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
+                            {{else}}
+                                <span class="avatar-initial">{{getUserInitial .User}}</span>
+                            {{end}}
+                            {{if isUserOnline .User}}
+                                <div class="online-indicator"></div>
+                            {{end}}
+                        </div>
+                        <div class="avatar-info">
+                            <h4>Current Avatar</h4>
+                            <p>{{if .User.AvatarURL}}Custom image{{else}}{{title (getAvatarStyle .User)}} style{{end}}</p>
+                        </div>
+                    </div>
+
+                    <div class="avatar-customization-section">
+                        <h3>Choose Avatar Style</h3>
+                        <p>Select a color scheme for your avatar:</p>
+                        
+                        <div class="avatar-style-options">
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "default"}}selected{{end}}" onclick="selectAvatarStyle('default')">
+                                <div class="avatar-preview avatar-default">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Default</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "red"}}selected{{end}}" onclick="selectAvatarStyle('red')">
+                                <div class="avatar-preview avatar-red">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Red</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "blue"}}selected{{end}}" onclick="selectAvatarStyle('blue')">
+                                <div class="avatar-preview avatar-blue">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Blue</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "green"}}selected{{end}}" onclick="selectAvatarStyle('green')">
+                                <div class="avatar-preview avatar-green">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Green</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "purple"}}selected{{end}}" onclick="selectAvatarStyle('purple')">
+                                <div class="avatar-preview avatar-purple">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Purple</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "orange"}}selected{{end}}" onclick="selectAvatarStyle('orange')">
+                                <div class="avatar-preview avatar-orange">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Orange</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "pink"}}selected{{end}}" onclick="selectAvatarStyle('pink')">
+                                <div class="avatar-preview avatar-pink">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Pink</div>
+                            </div>
+                            
+                            <div class="avatar-style-option {{if eq (getAvatarStyle .User) "teal"}}selected{{end}}" onclick="selectAvatarStyle('teal')">
+                                <div class="avatar-preview avatar-teal">{{getUserInitial .User}}</div>
+                                <div class="avatar-style-label">Teal</div>
+                            </div>
+                        </div>
+
+                        <div id="avatar-message" class="form-message" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Privacy Settings -->
             <div class="settings-section" id="privacy-section" style="display: none;">
                 <div class="settings-card">
@@ -104,7 +180,7 @@
                     <form id="privacy-form" class="settings-form">
                         <div class="form-group">
                             <div class="checkbox-group">
-                                <input type="checkbox" id="show-email" name="show_email">
+                                <input type="checkbox" id="show-email" name="show_email" {{if .User.ShowEmail}}checked{{end}}>
                                 <label for="show-email">Show email address on profile</label>
                             </div>
                             <small>Allow other users to see your email address</small>
@@ -112,7 +188,7 @@
                         
                         <div class="form-group">
                             <div class="checkbox-group">
-                                <input type="checkbox" id="show-online" name="show_online" checked>
+                                <input type="checkbox" id="show-online" name="show_online" {{if .User.ShowOnline}}checked{{end}}>
                                 <label for="show-online">Show online status</label>
                             </div>
                             <small>Let others see when you're online</small>
@@ -120,7 +196,7 @@
                         
                         <div class="form-group">
                             <div class="checkbox-group">
-                                <input type="checkbox" id="allow-messages" name="allow_messages" checked>
+                                <input type="checkbox" id="allow-messages" name="allow_messages" {{if .User.AllowMessages}}checked{{end}}>
                                 <label for="allow-messages">Allow private messages</label>
                             </div>
                             <small>Let other users send you private messages</small>
@@ -128,7 +204,7 @@
 
                         <div class="form-group">
                             <div class="checkbox-group">
-                                <input type="checkbox" id="public-profile" name="public_profile" checked>
+                                <input type="checkbox" id="public-profile" name="public_profile" {{if .User.PublicProfile}}checked{{end}}>
                                 <label for="public-profile">Public profile</label>
                             </div>
                             <small>Make your profile visible to everyone</small>
@@ -255,6 +331,68 @@
         });
     });
     
+    // Avatar style selection
+    function selectAvatarStyle(style) {
+        // Remove selected class from all options
+        document.querySelectorAll('.avatar-style-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked option
+        event.currentTarget.classList.add('selected');
+        
+        // Send update to server
+        updateAvatarStyle(style);
+    }
+    
+    async function updateAvatarStyle(style) {
+        try {
+            const response = await fetch('/api/profile/avatar-style', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ style: style })
+            });
+            
+            if (response.ok) {
+                // Update current avatar display
+                const currentAvatar = document.querySelector('.current-avatar-display .user-avatar');
+                const avatarInfo = document.querySelector('.avatar-info p');
+                
+                // Remove all avatar style classes
+                currentAvatar.className = currentAvatar.className.replace(/avatar-\w+/g, '');
+                // Add new style class
+                currentAvatar.classList.add('user-avatar', getAvatarClass(style));
+                
+                // Update info text
+                avatarInfo.textContent = style.charAt(0).toUpperCase() + style.slice(1) + ' style';
+                
+                showFormMessage('avatar-message', 'Avatar style updated successfully!', 'success');
+            } else {
+                const result = await response.text();
+                showFormMessage('avatar-message', result, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showFormMessage('avatar-message', 'Failed to update avatar style. Please try again.', 'error');
+        }
+    }
+    
+    function getAvatarClass(style) {
+        switch (style) {
+            case 'red': return 'avatar-red';
+            case 'blue': return 'avatar-blue';
+            case 'green': return 'avatar-green';
+            case 'purple': return 'avatar-purple';
+            case 'orange': return 'avatar-orange';
+            case 'pink': return 'avatar-pink';
+            case 'teal': return 'avatar-teal';
+            case 'admin': return 'avatar-admin';
+            default: return 'avatar-default';
+        }
+    }
+    
     // Profile form handler
     document.getElementById('profile-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -265,10 +403,10 @@
             bio: formData.get('bio'),
             location: formData.get('location'),
             website: formData.get('website'),
-            show_email: formData.has('show_email'),
-            show_online: formData.has('show_online'),
-            allow_messages: formData.has('allow_messages'),
-            public_profile: formData.has('public_profile')
+            show_email: document.getElementById('show-email')?.checked || false,
+            show_online: document.getElementById('show-online')?.checked || false,
+            allow_messages: document.getElementById('allow-messages')?.checked || false,
+            public_profile: document.getElementById('public-profile')?.checked || false
         };
         
         const submitBtn = this.querySelector('button[type="submit"]');
@@ -306,10 +444,10 @@
         
         const formData = new FormData(this);
         const data = {
-            display_name: document.getElementById('display-name').value || '{{.User.Username}}',
-            bio: document.getElementById('bio').value || '',
-            location: document.getElementById('location').value || '',
-            website: document.getElementById('website').value || '',
+            display_name: document.getElementById('display-name')?.value || '{{.User.Username}}',
+            bio: document.getElementById('bio')?.value || '',
+            location: document.getElementById('location')?.value || '',
+            website: document.getElementById('website')?.value || '',
             show_email: formData.has('show_email'),
             show_online: formData.has('show_online'),
             allow_messages: formData.has('allow_messages'),

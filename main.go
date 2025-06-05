@@ -38,7 +38,11 @@ func main() {
 	protected.HandleFunc("/threads/{id:[0-9]+}/edit", controllers.EditThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/profile", controllers.ProfileHandler).Methods("GET")
 	protected.HandleFunc("/settings", controllers.SettingsHandler).Methods("GET")
-	protected.HandleFunc("/user/{username}", controllers.UserByUsernameHandler).Methods("GET")
+
+	// User profile routes - these need to be accessible to view other users' profiles
+	userRoutes := r.PathPrefix("/user").Subrouter()
+	userRoutes.Use(middleware.AuthMiddleware)
+	userRoutes.HandleFunc("/{username}", controllers.UserByUsernameHandler).Methods("GET")
 
 	// Admin routes
 	admin := r.PathPrefix("/admin").Subrouter()
@@ -78,6 +82,7 @@ func main() {
 
 	// Profile API
 	apiProtected.HandleFunc("/profile/update", controllers.UpdateProfileHandler).Methods("POST")
+	apiProtected.HandleFunc("/profile/avatar", controllers.UpdateAvatarHandler).Methods("POST")
 	apiProtected.HandleFunc("/profile/avatar-style", controllers.UpdateAvatarHandler).Methods("POST")
 
 	// Admin API routes
@@ -89,5 +94,6 @@ func main() {
 	log.Println("🚀 GoForum server starting on :8080")
 	log.Println("📱 Visit http://localhost:8080 to access the forum")
 	log.Println("👤 Default admin: username=admin, password=AdminPassword123!")
+	log.Println("🎨 Avatar system enabled with customizable colors!")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

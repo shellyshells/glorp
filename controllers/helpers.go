@@ -84,6 +84,40 @@ func init() {
 			threshold := time.Now().Add(-5 * time.Minute)
 			return user.LastActivity.After(threshold)
 		},
+		"getUserInitial": func(user *models.User) string {
+			if user == nil || len(user.Username) == 0 {
+				return "U"
+			}
+			return strings.ToUpper(string(user.Username[0]))
+		},
+		"getAvatarStyle": func(user *models.User) string {
+			if user == nil || user.AvatarStyle == "" {
+				return "default"
+			}
+			return user.AvatarStyle
+		},
+		"getAvatarClass": func(style string) string {
+			switch style {
+			case "red":
+				return "avatar-red"
+			case "blue":
+				return "avatar-blue"
+			case "green":
+				return "avatar-green"
+			case "purple":
+				return "avatar-purple"
+			case "orange":
+				return "avatar-orange"
+			case "pink":
+				return "avatar-pink"
+			case "teal":
+				return "avatar-teal"
+			case "admin":
+				return "avatar-admin"
+			default:
+				return "avatar-default"
+			}
+		},
 	}
 }
 

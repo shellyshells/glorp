@@ -35,8 +35,15 @@
                         </a>
                     {{end}}
                     <div class="nav-user">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                        <div class="user-avatar {{getAvatarClass (getAvatarStyle .User)}}">
+                            {{if .User.AvatarURL}}
+                                <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
+                            {{else}}
+                                <span class="avatar-initial">{{getUserInitial .User}}</span>
+                            {{end}}
+                            {{if isUserOnline .User}}
+                                <div class="online-indicator"></div>
+                            {{end}}
                         </div>
                         <div class="user-info">
                             <span class="nav-username">u/{{.User.Username}}</span>
@@ -45,7 +52,7 @@
                                     <i class="fas fa-chevron-down"></i>
                                 </button>
                                 <div class="dropdown-menu" id="user-dropdown">
-                                    <a href="/profile" class="dropdown-item">
+                                    <a href="/user/{{.User.Username}}" class="dropdown-item">
                                         <i class="fas fa-user"></i> Profile
                                     </a>
                                     <a href="/settings" class="dropdown-item">

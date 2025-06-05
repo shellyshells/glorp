@@ -44,6 +44,7 @@ func createTables() {
 		location VARCHAR(100),
 		website VARCHAR(255),
 		avatar_url VARCHAR(255),
+		avatar_style VARCHAR(50) DEFAULT 'default',
 		show_email BOOLEAN DEFAULT FALSE,
 		show_online BOOLEAN DEFAULT TRUE,
 		allow_messages BOOLEAN DEFAULT TRUE,
@@ -138,6 +139,7 @@ func runMigrations() {
 		"ALTER TABLE users ADD COLUMN location VARCHAR(100)",
 		"ALTER TABLE users ADD COLUMN website VARCHAR(255)",
 		"ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255)",
+		"ALTER TABLE users ADD COLUMN avatar_style VARCHAR(50) DEFAULT 'default'",
 		"ALTER TABLE users ADD COLUMN show_email BOOLEAN DEFAULT FALSE",
 		"ALTER TABLE users ADD COLUMN show_online BOOLEAN DEFAULT TRUE",
 		"ALTER TABLE users ADD COLUMN allow_messages BOOLEAN DEFAULT TRUE",
@@ -202,6 +204,12 @@ func updateExistingData() {
 	if err != nil {
 		log.Printf("Migration update error: %v", err)
 	}
+
+	// Set default avatar style for existing users
+	_, err = DB.Exec("UPDATE users SET avatar_style = 'default' WHERE avatar_style IS NULL OR avatar_style = ''")
+	if err != nil {
+		log.Printf("Migration update error: %v", err)
+	}
 }
 
 // Helper function to hash password using SHA512 (same as utils.HashPassword)
@@ -227,8 +235,8 @@ func seedDatabase() {
 		log.Printf("🔑 Creating admin user with password: '%s'", adminPassword)
 		log.Printf("🔒 Generated hash: '%s'", hashedPassword)
 
-		_, err = DB.Exec(`INSERT INTO users (username, display_name, email, password_hash, role, created_at, last_activity) 
-						 VALUES ('admin', 'admin', 'admin@forum.com', ?, 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, hashedPassword)
+		_, err = DB.Exec(`INSERT INTO users (username, display_name, email, password_hash, role, avatar_style, created_at, last_activity) 
+						 VALUES ('admin', 'admin', 'admin@forum.com', ?, 'admin', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, hashedPassword)
 		if err != nil {
 			log.Printf("Failed to create admin user: %v", err)
 		} else {

@@ -21,6 +21,7 @@ type User struct {
 	Location      string     `json:"location"`
 	Website       string     `json:"website"`
 	AvatarURL     string     `json:"avatar_url"`
+	AvatarStyle   string     `json:"avatar_style"`
 	ShowEmail     bool       `json:"show_email"`
 	ShowOnline    bool       `json:"show_online"`
 	AllowMessages bool       `json:"allow_messages"`
@@ -35,6 +36,7 @@ type UserProfile struct {
 	Bio           string `json:"bio"`
 	Location      string `json:"location"`
 	Website       string `json:"website"`
+	AvatarStyle   string `json:"avatar_style"`
 	ShowEmail     bool   `json:"show_email"`
 	ShowOnline    bool   `json:"show_online"`
 	AllowMessages bool   `json:"allow_messages"`
@@ -42,8 +44,8 @@ type UserProfile struct {
 }
 
 func CreateUser(username, email, passwordHash string) (*User, error) {
-	query := `INSERT INTO users (username, display_name, email, password_hash, created_at, last_activity) 
-			  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+	query := `INSERT INTO users (username, display_name, email, password_hash, avatar_style, created_at, last_activity) 
+			  VALUES (?, ?, ?, ?, 'default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
 	result, err := config.DB.Exec(query, username, username, email, passwordHash)
 	if err != nil {
 		return nil, err
@@ -71,6 +73,7 @@ func GetUserByID(id int) (*User, error) {
 			         COALESCE(location, '') as location, 
 			         COALESCE(website, '') as website, 
 			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(avatar_style, 'default') as avatar_style,
 			         COALESCE(show_email, 0) as show_email, 
 			         COALESCE(show_online, 1) as show_online, 
 			         COALESCE(allow_messages, 1) as allow_messages, 
@@ -84,7 +87,7 @@ func GetUserByID(id int) (*User, error) {
 	err := config.DB.QueryRow(query, id).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
-		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
+		&user.AvatarStyle, &user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
 		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
@@ -127,6 +130,7 @@ func GetUserByUsername(username string) (*User, error) {
 			         COALESCE(location, '') as location, 
 			         COALESCE(website, '') as website, 
 			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(avatar_style, 'default') as avatar_style,
 			         COALESCE(show_email, 0) as show_email, 
 			         COALESCE(show_online, 1) as show_online, 
 			         COALESCE(allow_messages, 1) as allow_messages, 
@@ -141,7 +145,7 @@ func GetUserByUsername(username string) (*User, error) {
 	err := config.DB.QueryRow(query, username).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
-		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
+		&user.AvatarStyle, &user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
 		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
@@ -184,6 +188,7 @@ func GetUserByEmail(email string) (*User, error) {
 			         COALESCE(location, '') as location, 
 			         COALESCE(website, '') as website, 
 			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(avatar_style, 'default') as avatar_style,
 			         COALESCE(show_email, 0) as show_email, 
 			         COALESCE(show_online, 1) as show_online, 
 			         COALESCE(allow_messages, 1) as allow_messages, 
@@ -198,7 +203,7 @@ func GetUserByEmail(email string) (*User, error) {
 	err := config.DB.QueryRow(query, email).Scan(
 		&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
 		&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
-		&user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
+		&user.AvatarStyle, &user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
 		&user.CreatedAt, &lastLogin, &lastActivityStr,
 	)
 
@@ -243,12 +248,12 @@ func GetUserByIdentifier(identifier string) (*User, error) {
 
 func UpdateUserProfile(userID int, profile UserProfile) error {
 	query := `UPDATE users SET 
-			  display_name = ?, bio = ?, location = ?, website = ?,
+			  display_name = ?, bio = ?, location = ?, website = ?, avatar_style = ?,
 			  show_email = ?, show_online = ?, allow_messages = ?, public_profile = ?
 			  WHERE id = ?`
 
 	_, err := config.DB.Exec(query,
-		profile.DisplayName, profile.Bio, profile.Location, profile.Website,
+		profile.DisplayName, profile.Bio, profile.Location, profile.Website, profile.AvatarStyle,
 		profile.ShowEmail, profile.ShowOnline, profile.AllowMessages, profile.PublicProfile,
 		userID)
 
@@ -258,6 +263,12 @@ func UpdateUserProfile(userID int, profile UserProfile) error {
 func UpdateUserAvatar(userID int, avatarURL string) error {
 	query := `UPDATE users SET avatar_url = ? WHERE id = ?`
 	_, err := config.DB.Exec(query, avatarURL, userID)
+	return err
+}
+
+func UpdateUserAvatarStyle(userID int, style string) error {
+	query := `UPDATE users SET avatar_style = ? WHERE id = ?`
+	_, err := config.DB.Exec(query, style, userID)
 	return err
 }
 
@@ -323,4 +334,20 @@ func ValidateUser(user *User) error {
 		return errors.New("username must be less than 50 characters")
 	}
 	return nil
+}
+
+// GetUserInitial returns the first letter of the username for avatar display
+func (u *User) GetUserInitial() string {
+	if len(u.Username) > 0 {
+		return string(u.Username[0])
+	}
+	return "U"
+}
+
+// GetAvatarStyle returns the avatar style or default
+func (u *User) GetAvatarStyle() string {
+	if u.AvatarStyle == "" {
+		return "default"
+	}
+	return u.AvatarStyle
 }
