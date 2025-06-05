@@ -107,7 +107,18 @@
                                     <a href="/?tag={{.Name}}" class="community-link">r/{{.Name}}</a>
                                 {{end}}
                                 <span>•</span>
-                                <span>Posted by u/{{.Author.Username}}</span>
+                                <span>Posted by 
+                                    <div class="inline-user-info">
+                                        <div class="user-avatar-small {{getAvatarClass (getAvatarStyle .Author)}}">
+                                            {{if .Author.AvatarURL}}
+                                                <img src="{{.Author.AvatarURL}}" alt="{{.Author.Username}}" class="avatar-img">
+                                            {{else}}
+                                                <span class="avatar-initial">{{getUserInitial .Author}}</span>
+                                            {{end}}
+                                        </div>
+                                        <a href="/user/{{.Author.Username}}" class="user-link">u/{{.Author.Username}}</a>
+                                    </div>
+                                </span>
                                 <span>•</span>
                                 <span title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
                                 {{if eq .Status "closed"}}
@@ -1484,6 +1495,166 @@ document.querySelectorAll('.preview-image').forEach(img => {
     text-align: center;
     color: #878a8c;
     border: 1px solid #edeff1;
+}
+
+/* Avatar System Styles */
+.user-avatar, .user-avatar-small {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.user-avatar-small {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initial {
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1;
+}
+
+/* Avatar Color Styles */
+.avatar-default {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.avatar-red {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+}
+
+.avatar-blue {
+    background: linear-gradient(135deg, #4834d4, #686de0);
+}
+
+.avatar-green {
+    background: linear-gradient(135deg, #00d2d3, #54a0ff);
+}
+
+.avatar-purple {
+    background: linear-gradient(135deg, #a55eea, #8854d0);
+}
+
+.avatar-orange {
+    background: linear-gradient(135deg, #fd9644, #f39c12);
+}
+
+.avatar-pink {
+    background: linear-gradient(135deg, #ff9ff3, #f368e0);
+}
+
+.avatar-teal {
+    background: linear-gradient(135deg, #26d0ce, #1abc9c);
+}
+
+.avatar-admin {
+    background: linear-gradient(135deg, #fd79a8, #e84393);
+    border: 2px solid #ffd700;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background: #00d26a;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.user-avatar-small .online-indicator {
+    width: 8px;
+    height: 8px;
+    border: 1px solid white;
+    bottom: -1px;
+    right: -1px;
+}
+
+/* Inline user info for thread listings */
+.inline-user-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    vertical-align: middle;
+}
+
+.user-link {
+    color: #0079d3;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.user-link:hover {
+    text-decoration: underline;
+}
+
+/* Navigation user avatar adjustments */
+.nav-user .user-avatar {
+    margin-right: 8px;
+}
+
+/* Thread meta line adjustments */
+.thread-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #878a8c;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.thread-meta-line .inline-user-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .user-avatar-small {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+    }
+    
+    .online-indicator {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .user-avatar-small .online-indicator {
+        width: 6px;
+        height: 6px;
+    }
 }
 </style>
 {{end}}
