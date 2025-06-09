@@ -33,6 +33,12 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		Limit:   limit,
 	}
 
+	// Add user ID to filters if user is authenticated
+	user := middleware.GetUserFromContext(r)
+	if user != nil {
+		filters.UserID = user.ID
+	}
+
 	threads, total, err := models.GetThreads(filters)
 	if err != nil {
 		http.Error(w, "Failed to load threads", http.StatusInternalServerError)
@@ -41,9 +47,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	tags, _ := models.GetAllTags()
 	pagination := utils.CalculatePagination(total, page, limit)
-
-	// Check if user is authenticated
-	user := middleware.GetUserFromContext(r)
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/index.html"))
 	data := map[string]interface{}{
@@ -69,7 +72,13 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, err := models.GetThreadByID(threadID)
+	user := middleware.GetUserFromContext(r)
+	userID := 0
+	if user != nil {
+		userID = user.ID
+	}
+
+	thread, err := models.GetThreadByIDWithUser(threadID, userID)
 	if err != nil {
 		http.Error(w, "Thread not found", http.StatusNotFound)
 		return
@@ -87,12 +96,6 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 
 	page, limit := utils.ParsePaginationParams(pageStr, limitStr)
-
-	user := middleware.GetUserFromContext(r)
-	userID := 0
-	if user != nil {
-		userID = user.ID
-	}
 
 	messageFilters := models.MessageFilters{
 		ThreadID: threadID,
@@ -200,6 +203,12 @@ func GetThreadsHandler(w http.ResponseWriter, r *http.Request) {
 		SortBy:  sortBy,
 		Page:    page,
 		Limit:   limit,
+	}
+
+	// Add user ID to filters if user is authenticated
+	user := middleware.GetUserFromContext(r)
+	if user != nil {
+		filters.UserID = user.ID
 	}
 
 	threads, total, err := models.GetThreads(filters)
@@ -356,7 +365,7 @@ func UpdateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, err := models.GetThreadByID(threadID)
+	thread, err := models.GetThreadByIDWithUser(threadID, user.ID)
 	if err != nil {
 		http.Error(w, "Failed to get updated thread", http.StatusInternalServerError)
 		return
@@ -433,18 +442,13 @@ func VoteThreadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if thread exists
-	thread, err := models.GetThreadByID(threadID)
+	_, err = models.GetThreadByID(threadID)
 	if err != nil {
 		http.Error(w, "Thread not found", http.StatusNotFound)
 		return
 	}
 
-	// Users cannot vote on their own threads
-	if thread.AuthorID == user.ID {
-		http.Error(w, "Cannot vote on your own thread", http.StatusForbidden)
-		return
-	}
-
+	// Users can vote on their own threads
 	err = models.VoteThread(threadID, user.ID, req.VoteType)
 	if err != nil {
 		http.Error(w, "Failed to vote: "+err.Error(), http.StatusInternalServerError)

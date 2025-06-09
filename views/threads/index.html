@@ -15,7 +15,15 @@
                 </a>
             </div>
         </div>
-
+        <div class="sidebar-section">
+            <h3><i class="fas fa-search"></i> Search</h3>
+            <form action="/search" method="get" class="search-form">
+                <input type="text" name="q" placeholder="Search threads..." class="search-input">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
         <div class="sidebar-section">
             <h3><i class="fas fa-tags"></i> Communities</h3>
             <div class="tag-list">
@@ -79,25 +87,25 @@
                     <div class="thread-content-wrapper">
                         <div class="thread-vote-section">
                             {{if $.User}}
-                                <button class="vote-arrow" onclick="voteThread('{{.ID}}', 1)" title="Upvote">
+                                <button class="vote-arrow {{if eq .UserVote 1}}upvoted{{end}}" onclick="voteThread('{{.ID}}', 1)" title="Upvote">
                                     <i class="fas fa-arrow-up"></i>
                                 </button>
                             {{else}}
-                                <div class="vote-arrow" title="Login to vote">
+                                <a href="/login" class="vote-arrow" title="Login to vote">
                                     <i class="fas fa-arrow-up"></i>
-                                </div>
+                                </a>
                             {{end}}
                             
-                            <div class="vote-score" data-score="{{.MessageCount}}">{{.MessageCount}}</div>
+                            <div class="vote-score" data-thread-id="{{.ID}}" data-score="{{.Score}}">{{.Score}}</div>
                             
                             {{if $.User}}
-                                <button class="vote-arrow" onclick="voteThread('{{.ID}}', -1)" title="Downvote">
+                                <button class="vote-arrow {{if eq .UserVote -1}}downvoted{{end}}" onclick="voteThread('{{.ID}}', -1)" title="Downvote">
                                     <i class="fas fa-arrow-down"></i>
                                 </button>
                             {{else}}
-                                <div class="vote-arrow" title="Login to vote">
+                                <a href="/login" class="vote-arrow" title="Login to vote">
                                     <i class="fas fa-arrow-down"></i>
-                                </div>
+                                </a>
                             {{end}}
                         </div>
                         
@@ -695,15 +703,53 @@ function updateLimit(limit) {
     window.location.href = url.toString();
 }
 
-// Vote on thread (placeholder - you can implement this)
+// Vote on thread
 async function voteThread(threadId, voteType) {
     try {
-        // This would be implemented when you add thread voting
-        console.log('Vote thread:', threadId, voteType);
+        const response = await fetch(`/api/threads/${threadId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vote_type: voteType })
+        });
         
-        // Show feedback
-        if (window.GoForum) {
-            GoForum.showNotification('Voting on threads coming soon!', 'info');
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Update the vote display
+            const threadCard = document.querySelector(`[data-thread-id="${threadId}"]`);
+            if (threadCard) {
+                const scoreElement = threadCard.querySelector('.vote-score');
+                const upvoteBtn = threadCard.querySelector('.vote-arrow:first-child');
+                const downvoteBtn = threadCard.querySelector('.vote-arrow:last-child');
+                
+                // Update score
+                scoreElement.textContent = result.score;
+                scoreElement.dataset.score = result.score;
+                
+                // Update button states
+                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
+                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
+                
+                // Add visual feedback
+                const feedbackClass = voteType === 1 ? 'vote-feedback-up' : 'vote-feedback-down';
+                scoreElement.classList.add(feedbackClass);
+                setTimeout(() => {
+                    scoreElement.classList.remove(feedbackClass);
+                }, 300);
+            }
+            
+            if (window.GoForum) {
+                const action = result.user_vote === voteType ? 
+                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
+                GoForum.showNotification(`Post ${action}!`, 'success');
+            }
+        } else {
+            const result = await response.text();
+            if (window.GoForum) {
+                GoForum.showNotification(result, 'error');
+            }
         }
     } catch (error) {
         console.error('Error voting:', error);

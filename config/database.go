@@ -83,10 +83,12 @@ func createTables() {
 	CREATE TABLE IF NOT EXISTS messages (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		thread_id INTEGER NOT NULL,
+		parent_id INTEGER,
 		author_id INTEGER NOT NULL,
 		content TEXT NOT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
+		FOREIGN KEY (parent_id) REFERENCES messages(id) ON DELETE CASCADE,
 		FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 	);
 
@@ -148,6 +150,7 @@ func runMigrations() {
 		"ALTER TABLE threads ADD COLUMN post_type VARCHAR(20) DEFAULT 'text'",
 		"ALTER TABLE threads ADD COLUMN image_url VARCHAR(500)",
 		"ALTER TABLE threads ADD COLUMN link_url VARCHAR(500)",
+		"ALTER TABLE messages ADD COLUMN parent_id INTEGER",
 	}
 
 	for _, migration := range migrations {
@@ -168,10 +171,13 @@ func runMigrations() {
 		"CREATE INDEX IF NOT EXISTS idx_threads_status ON threads(status)",
 		"CREATE INDEX IF NOT EXISTS idx_threads_created ON threads(created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id)",
+		"CREATE INDEX IF NOT EXISTS idx_messages_parent ON messages(parent_id)",
 		"CREATE INDEX IF NOT EXISTS idx_messages_author ON messages(author_id)",
 		"CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)",
 		"CREATE INDEX IF NOT EXISTS idx_votes_message ON votes(message_id)",
 		"CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_thread_votes_thread ON thread_votes(thread_id)",
+		"CREATE INDEX IF NOT EXISTS idx_thread_votes_user ON thread_votes(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_thread_tags_thread ON thread_tags(thread_id)",
 		"CREATE INDEX IF NOT EXISTS idx_thread_tags_tag ON thread_tags(tag_id)",
 		"CREATE INDEX IF NOT EXISTS idx_uploaded_files_user ON uploaded_files(user_id)",

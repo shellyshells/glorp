@@ -44,7 +44,8 @@ func CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Content string `json:"content"`
+		Content  string `json:"content"`
+		ParentID *int   `json:"parent_id"` // For nested replies
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -66,7 +67,20 @@ func CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, err := models.CreateMessage(threadID, user.ID, req.Content)
+	// If parent_id is provided, validate that the parent message exists and belongs to the same thread
+	if req.ParentID != nil {
+		parentMessage, err := models.GetMessageByID(*req.ParentID, 0)
+		if err != nil {
+			http.Error(w, "Parent message not found", http.StatusNotFound)
+			return
+		}
+		if parentMessage.ThreadID != threadID {
+			http.Error(w, "Parent message does not belong to this thread", http.StatusBadRequest)
+			return
+		}
+	}
+
+	message, err := models.CreateMessageWithParent(threadID, user.ID, req.Content, req.ParentID)
 	if err != nil {
 		http.Error(w, "Failed to create message: "+err.Error(), http.StatusInternalServerError)
 		return

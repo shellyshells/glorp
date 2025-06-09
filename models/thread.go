@@ -21,6 +21,10 @@ type Thread struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 	Tags         []Tag     `json:"tags,omitempty"`
 	MessageCount int       `json:"message_count"`
+	Upvotes      int       `json:"upvotes"`
+	Downvotes    int       `json:"downvotes"`
+	Score        int       `json:"score"`
+	UserVote     int       `json:"user_vote,omitempty"` // 1 for upvote, -1 for downvote, 0 for no vote
 }
 
 type ThreadFilters struct {
@@ -29,9 +33,10 @@ type ThreadFilters struct {
 	Search   string `json:"search"`
 	Status   string `json:"status"`
 	AuthorID int    `json:"author_id"`
+	UserID   int    `json:"user_id"`
 	Page     int    `json:"page"`
 	Limit    int    `json:"limit"`
-	SortBy   string `json:"sort_by"` // date, popularity
+	SortBy   string `json:"sort_by"` // date, popularity, hot
 }
 
 func CreateThread(title, description string, authorID int, tagIDs []int) (*Thread, error) {
@@ -65,22 +70,37 @@ func CreateThreadWithMedia(title, description string, authorID int, tagIDs []int
 		}
 	}
 
+	// Auto-upvote the thread by the author
+	_, err = tx.Exec(`INSERT INTO thread_votes (thread_id, user_id, vote_type) VALUES (?, ?, 1)`,
+		threadID, authorID)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	return GetThreadByID(int(threadID))
+	return GetThreadByIDWithUser(int(threadID), authorID)
 }
 
 func GetThreadByID(id int) (*Thread, error) {
+	return GetThreadByIDWithUser(id, 0)
+}
+
+func GetThreadByIDWithUser(id, userID int) (*Thread, error) {
 	thread := &Thread{}
 	query := `SELECT t.id, t.title, t.description, t.author_id, t.status, 
 			         t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 			         t.created_at, t.updated_at, u.username,
-					 COUNT(m.id) as message_count
+					 COUNT(DISTINCT m.id) as message_count,
+					 COALESCE(SUM(CASE WHEN tv.vote_type = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+					 COALESCE(SUM(CASE WHEN tv.vote_type = -1 THEN 1 ELSE 0 END), 0) as downvotes,
+					 COALESCE(SUM(tv.vote_type), 0) as score
 			  FROM threads t 
 			  LEFT JOIN users u ON t.author_id = u.id 
 			  LEFT JOIN messages m ON t.id = m.thread_id
+			  LEFT JOIN thread_votes tv ON t.id = tv.thread_id
 			  WHERE t.id = ?
 			  GROUP BY t.id`
 
@@ -89,7 +109,7 @@ func GetThreadByID(id int) (*Thread, error) {
 		&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
 		&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
 		&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
-		&thread.MessageCount,
+		&thread.MessageCount, &thread.Upvotes, &thread.Downvotes, &thread.Score,
 	)
 
 	if err != nil {
@@ -99,6 +119,16 @@ func GetThreadByID(id int) (*Thread, error) {
 	thread.Author = &User{
 		ID:       thread.AuthorID,
 		Username: authorUsername,
+	}
+
+	// Get user's vote if userID is provided
+	if userID > 0 {
+		var vote int
+		voteQuery := `SELECT vote_type FROM thread_votes WHERE thread_id = ? AND user_id = ?`
+		err = config.DB.QueryRow(voteQuery, thread.ID, userID).Scan(&vote)
+		if err == nil {
+			thread.UserVote = vote
+		}
 	}
 
 	// Get tags
@@ -119,6 +149,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		LEFT JOIN messages m ON t.id = m.thread_id
 		LEFT JOIN thread_tags tt ON t.id = tt.thread_id
 		LEFT JOIN tags tag ON tt.tag_id = tag.id
+		LEFT JOIN thread_votes tv ON t.id = tv.thread_id
 	`
 
 	// Build WHERE conditions
@@ -169,16 +200,31 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		return nil, 0, err
 	}
 
-	// Main query
+	// Main query with voting data
 	selectQuery := `
 		SELECT DISTINCT t.id, t.title, t.description, t.author_id, t.status, 
 		       t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 		       t.created_at, t.updated_at, u.username,
-			   COUNT(DISTINCT m.id) as message_count
+			   COUNT(DISTINCT m.id) as message_count,
+			   COALESCE(SUM(CASE WHEN tv.vote_type = 1 THEN 1 ELSE 0 END), 0) as upvotes,
+			   COALESCE(SUM(CASE WHEN tv.vote_type = -1 THEN 1 ELSE 0 END), 0) as downvotes,
+			   COALESCE(SUM(tv.vote_type), 0) as score
 	` + baseQuery + whereClause + ` 
 		GROUP BY t.id
-		ORDER BY t.created_at DESC
 	`
+
+	// Add sorting
+	switch filters.SortBy {
+	case "hot":
+		// Hot algorithm: score / (age in hours + 2)^1.8
+		selectQuery += " ORDER BY (COALESCE(SUM(tv.vote_type), 0) + 1) / POW((julianday('now') - julianday(t.created_at)) * 24 + 2, 1.8) DESC"
+	case "top":
+		selectQuery += " ORDER BY COALESCE(SUM(tv.vote_type), 0) DESC, t.created_at DESC"
+	case "new":
+		selectQuery += " ORDER BY t.created_at DESC"
+	default: // date or popularity
+		selectQuery += " ORDER BY t.created_at DESC"
+	}
 
 	// Add pagination
 	if filters.Limit > 0 {
@@ -206,7 +252,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 			&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
 			&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
 			&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
-			&thread.MessageCount,
+			&thread.MessageCount, &thread.Upvotes, &thread.Downvotes, &thread.Score,
 		)
 		if err != nil {
 			continue
@@ -215,6 +261,16 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		thread.Author = &User{
 			ID:       thread.AuthorID,
 			Username: authorUsername,
+		}
+
+		// Get user's vote if userID is provided
+		if filters.UserID > 0 {
+			var vote int
+			voteQuery := `SELECT vote_type FROM thread_votes WHERE thread_id = ? AND user_id = ?`
+			err = config.DB.QueryRow(voteQuery, thread.ID, filters.UserID).Scan(&vote)
+			if err == nil {
+				thread.UserVote = vote
+			}
 		}
 
 		// Get tags for each thread
