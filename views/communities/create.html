@@ -1,0 +1,468 @@
+{{define "content"}}
+<div class="create-community-container">
+    <div class="create-community-header">
+        <h1><i class="fas fa-plus"></i> Create a Community</h1>
+        <p>Build a place for people to gather around shared interests</p>
+    </div>
+
+    <div class="create-community-form-container">
+        <form id="create-community-form" class="create-community-form">
+            <div class="form-section">
+                <h2>Community Details</h2>
+                
+                <div class="form-group">
+                    <label for="community-name">Community Name *</label>
+                    <div class="name-input-wrapper">
+                        <span class="name-prefix">r/</span>
+                        <input type="text" id="community-name" name="name" required maxlength="50" 
+                               placeholder="CommunityName" pattern="[a-zA-Z0-9_]+" 
+                               title="Only letters, numbers, and underscores allowed">
+                    </div>
+                    <small class="help-text">
+                        3-50 characters. Letters, numbers, and underscores only. Cannot be changed later.
+                    </small>
+                    <div class="name-availability" id="name-availability"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="display-name">Display Name *</label>
+                    <input type="text" id="display-name" name="display_name" required maxlength="100" 
+                           placeholder="My Awesome Community">
+                    <small class="help-text">How your community name appears to users</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" maxlength="500" 
+                              placeholder="Tell people what your community is about..."></textarea>
+                    <small class="help-text">Optional. Describe your community's purpose and rules.</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Community Settings</h2>
+                
+                <div class="form-group">
+                    <label>Community Type</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="visibility-public" name="visibility" value="public" checked>
+                            <label for="visibility-public">
+                                <div class="radio-header">
+                                    <i class="fas fa-globe"></i>
+                                    <strong>Public</strong>
+                                </div>
+                                <p>Anyone can view, post, and comment</p>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="visibility-restricted" name="visibility" value="restricted">
+                            <label for="visibility-restricted">
+                                <div class="radio-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <strong>Restricted</strong>
+                                </div>
+                                <p>Anyone can view, but only approved users can post</p>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="visibility-private" name="visibility" value="private">
+                            <label for="visibility-private">
+                                <div class="radio-header">
+                                    <i class="fas fa-lock"></i>
+                                    <strong>Private</strong>
+                                </div>
+                                <p>Only members can view and contribute</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>How can people join?</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="join-open" name="join_approval" value="open" checked>
+                            <label for="join-open">
+                                <div class="radio-header">
+                                    <i class="fas fa-door-open"></i>
+                                    <strong>Open</strong>
+                                </div>
+                                <p>Anyone can join immediately</p>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="join-approval" name="join_approval" value="approval_required">
+                            <label for="join-approval">
+                                <div class="radio-header">
+                                    <i class="fas fa-user-check"></i>
+                                    <strong>Approval Required</strong>
+                                </div>
+                                <p>Users must request to join and be approved</p>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="join-invite" name="join_approval" value="invite_only">
+                            <label for="join-invite">
+                                <div class="radio-header">
+                                    <i class="fas fa-envelope"></i>
+                                    <strong>Invite Only</strong>
+                                </div>
+                                <p>Only invited users can join</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/communities" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Community
+                </button>
+            </div>
+
+            <div id="form-message" class="form-message" style="display: none;"></div>
+        </form>
+    </div>
+</div>
+
+<script>
+let nameCheckTimeout;
+
+// Auto-fill display name from community name
+document.getElementById('community-name').addEventListener('input', function() {
+    const name = this.value;
+    const displayName = document.getElementById('display-name');
+    
+    if (!displayName.value || displayName.value === displayName.dataset.autoFilled) {
+        displayName.value = name;
+        displayName.dataset.autoFilled = name;
+    }
+    
+    // Check name availability
+    clearTimeout(nameCheckTimeout);
+    if (name.length >= 3) {
+        nameCheckTimeout = setTimeout(() => checkNameAvailability(name), 500);
+    } else {
+        document.getElementById('name-availability').innerHTML = '';
+    }
+});
+
+async function checkNameAvailability(name) {
+    if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+        document.getElementById('name-availability').innerHTML = 
+            '<span class="availability-error"><i class="fas fa-times"></i> Invalid characters</span>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/communities/check-name?name=${encodeURIComponent(name)}`);
+        const result = await response.json();
+        
+        const availability = document.getElementById('name-availability');
+        if (result.available) {
+            availability.innerHTML = '<span class="availability-success"><i class="fas fa-check"></i> Available</span>';
+        } else {
+            availability.innerHTML = '<span class="availability-error"><i class="fas fa-times"></i> Name already taken</span>';
+        }
+    } catch (error) {
+        console.error('Error checking name availability:', error);
+    }
+}
+
+// Form submission
+document.getElementById('create-community-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        display_name: formData.get('display_name'),
+        description: formData.get('description'),
+        visibility: formData.get('visibility'),
+        join_approval: formData.get('join_approval')
+    };
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    
+    try {
+        const response = await fetch('/api/communities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showFormMessage('Community created successfully! Redirecting...', 'success');
+            setTimeout(() => {
+                window.location.href = `/r/${result.community.name}`;
+            }, 1500);
+        } else {
+            const result = await response.text();
+            showFormMessage(result, 'error');
+        }
+    } catch (error) {
+        showFormMessage('Failed to create community. Please try again.', 'error');
+        console.error('Error creating community:', error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+});
+
+function showFormMessage(message, type) {
+    const messageDiv = document.getElementById('form-message');
+    messageDiv.textContent = message;
+    messageDiv.className = `form-message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    if (type === 'error') {
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+</script>
+
+<style>
+.create-community-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.create-community-header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.create-community-header h1 {
+    color: #1a1a1b;
+    margin-bottom: 8px;
+}
+
+.create-community-header p {
+    color: #878a8c;
+}
+
+.create-community-form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.create-community-form {
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.form-section h2 {
+    color: #1a1a1b;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #1a1a1b;
+}
+
+.name-input-wrapper {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.name-prefix {
+    background: #f6f7f8;
+    color: #878a8c;
+    padding: 12px;
+    font-weight: 600;
+    border-right: 1px solid #ccc;
+}
+
+.name-input-wrapper input {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    outline: none;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #0079d3;
+    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+}
+
+.help-text {
+    display: block;
+    margin-top: 6px;
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.name-availability {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.availability-success {
+    color: #28a745;
+}
+
+.availability-error {
+    color: #dc3545;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-option {
+    border: 2px solid #edeff1;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.radio-option:hover {
+    border-color: #0079d3;
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+.radio-option input[type="radio"]:checked + label {
+    border-color: #0079d3;
+    background: #f6f9ff;
+}
+
+.radio-option label {
+    display: block;
+    padding: 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.radio-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.radio-header i {
+    color: #0079d3;
+    font-size: 18px;
+    width: 20px;
+}
+
+.radio-header strong {
+    color: #1a1a1b;
+    font-size: 16px;
+}
+
+.radio-option p {
+    margin: 0;
+    color: #878a8c;
+    font-size: 14px;
+    margin-left: 32px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #edeff1;
+}
+
+.form-message {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.form-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+@media (max-width: 768px) {
+    .create-community-container {
+        padding: 12px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .radio-group {
+        gap: 8px;
+    }
+    
+    .radio-option label {
+        padding: 12px;
+    }
+}
+</style>
+{{end}} 

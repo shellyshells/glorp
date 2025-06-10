@@ -19,21 +19,42 @@
             
             <div class="nav-search">
                 <form id="search-form" class="search-form">
-                    <input type="text" id="search-input" placeholder="Search threads..." name="q" value="{{if .Filters}}{{.Filters.Search}}{{end}}">
+                    <input type="text" id="search-input" placeholder="Search posts..." name="q" value="{{if .Filters}}{{.Filters.Search}}{{end}}">
                     <button type="submit"><i class="fas fa-search"></i></button>
                 </form>
             </div>
 
             <div class="nav-menu">
+                <a href="/" class="nav-link {{if eq .Page "home"}}active{{end}}">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                
+                <a href="/communities" class="nav-link {{if eq .Page "communities"}}active{{end}}">
+                    <i class="fas fa-users"></i> Communities
+                </a>
+                
                 {{if .User}}
-                    <a href="/threads/create" class="nav-link btn-create">
-                        <i class="fas fa-plus"></i> Create Post
-                    </a>
+                    <div class="nav-dropdown">
+                        <button class="nav-dropdown-toggle" onclick="toggleNavDropdown('create-dropdown')">
+                            <i class="fas fa-plus"></i> Create
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="nav-dropdown-menu" id="create-dropdown">
+                            <a href="/threads/create" class="nav-dropdown-item">
+                                <i class="fas fa-edit"></i> Create Post
+                            </a>
+                            <a href="/communities/create" class="nav-dropdown-item">
+                                <i class="fas fa-users"></i> Create Community
+                            </a>
+                        </div>
+                    </div>
+                    
                     {{if eq .User.Role "admin"}}
                         <a href="/admin/dashboard" class="nav-link">
                             <i class="fas fa-cog"></i> Admin
                         </a>
                     {{end}}
+                    
                     <div class="nav-user">
                         <div class="user-avatar {{getAvatarClass (getAvatarStyle .User)}}">
                             {{if .User.AvatarURL}}
@@ -93,17 +114,159 @@
         function toggleUserDropdown() {
             const dropdown = document.getElementById('user-dropdown');
             dropdown.classList.toggle('show');
+            
+            // Close other dropdowns
+            document.querySelectorAll('.nav-dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
         }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('user-dropdown');
-            const toggle = document.querySelector('.dropdown-toggle');
+        function toggleNavDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('show');
             
-            if (dropdown && !dropdown.contains(event.target) && !toggle.contains(event.target)) {
-                dropdown.classList.remove('show');
+            // Close other dropdowns
+            document.getElementById('user-dropdown')?.classList.remove('show');
+            document.querySelectorAll('.nav-dropdown-menu').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const userDropdown = document.getElementById('user-dropdown');
+            const userToggle = document.querySelector('.dropdown-toggle');
+            
+            if (userDropdown && !userDropdown.contains(event.target) && !userToggle?.contains(event.target)) {
+                userDropdown.classList.remove('show');
             }
+            
+            // Close nav dropdowns
+            document.querySelectorAll('.nav-dropdown').forEach(navDropdown => {
+                const toggle = navDropdown.querySelector('.nav-dropdown-toggle');
+                const menu = navDropdown.querySelector('.nav-dropdown-menu');
+                
+                if (!navDropdown.contains(event.target)) {
+                    menu.classList.remove('show');
+                }
+            });
         });
     </script>
+    
+    <style>
+    /* Enhanced navigation styles for communities */
+    .nav-dropdown {
+        position: relative;
+    }
+    
+    .nav-dropdown-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: #ff4500;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .nav-dropdown-toggle:hover {
+        background: #e03e00;
+        transform: translateY(-1px);
+    }
+    
+    .nav-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        min-width: 200px;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s;
+        margin-top: 8px;
+    }
+    
+    .nav-dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .nav-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: #1a1a1b;
+        text-decoration: none;
+        font-size: 14px;
+        border: none;
+        background: none;
+        width: 100%;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .nav-dropdown-item:hover {
+        background-color: #f6f7f8;
+    }
+    
+    .nav-dropdown-item:first-child {
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .nav-dropdown-item:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .nav-link.active {
+        background: rgba(0, 121, 211, 0.1);
+        color: #0079d3;
+        border-radius: 4px;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .nav-container {
+            flex-direction: column;
+            height: auto;
+            padding: 10px 20px;
+        }
+        
+        .nav-search {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .nav-menu {
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .nav-dropdown-menu {
+            right: 0;
+            left: auto;
+        }
+        
+        .main-content {
+            margin-top: 120px;
+        }
+    }
+    </style>
 </body>
 </html>

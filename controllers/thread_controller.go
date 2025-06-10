@@ -16,7 +16,7 @@ import (
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	// Get query parameters
-	tagName := r.URL.Query().Get("tag")
+	communityName := r.URL.Query().Get("community")
 	search := r.URL.Query().Get("search")
 	sortBy := r.URL.Query().Get("sort")
 	pageStr := r.URL.Query().Get("page")
@@ -26,11 +26,10 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build filters
 	filters := models.ThreadFilters{
-		TagName: tagName,
-		Search:  search,
-		SortBy:  sortBy,
-		Page:    page,
-		Limit:   limit,
+		Search: search,
+		SortBy: sortBy,
+		Page:   page,
+		Limit:  limit,
 	}
 
 	// Add user ID to filters if user is authenticated
@@ -39,24 +38,71 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		filters.UserID = user.ID
 	}
 
-	threads, total, err := models.GetThreads(filters)
+	// If specific community is requested, get community ID
+	var selectedCommunity *models.Community
+	if communityName != "" {
+		community, err := models.GetCommunityByName(communityName, filters.UserID)
+		if err == nil {
+			filters.CommunityID = community.ID
+			selectedCommunity = community
+		}
+	}
+
+	var threads []models.Thread
+	var total int
+	var err error
+
+	if filters.CommunityID > 0 {
+		// Get threads from specific community
+		threads, total, err = models.GetThreadsByCommunity(filters)
+	} else {
+		// Get threads from all communities
+		threads, total, err = models.GetThreads(filters)
+	}
+
 	if err != nil {
 		http.Error(w, "Failed to load threads", http.StatusInternalServerError)
 		return
 	}
 
-	tags, _ := models.GetAllTags()
+	// Get popular communities for sidebar
+	communityFilters := models.CommunityFilters{
+		Visibility: "public",
+		SortBy:     "members",
+		Limit:      10,
+	}
+	popularCommunities, _, _ := models.GetCommunities(communityFilters)
+
+	// Get user's communities if authenticated
+	var userCommunities []models.Community
+	if user != nil {
+		userCommunityFilters := models.CommunityFilters{
+			UserID: user.ID,
+			SortBy: "name",
+			Limit:  20,
+		}
+		userCommunities, _, _ = models.GetCommunities(userCommunityFilters)
+	}
+
 	pagination := utils.CalculatePagination(total, page, limit)
+
+	// Determine page title
+	pageTitle := "GoForum - Home"
+	if selectedCommunity != nil {
+		pageTitle = "r/" + selectedCommunity.DisplayName + " - GoForum"
+	}
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/index.html"))
 	data := map[string]interface{}{
-		"Title":      "GoForum - Home",
-		"Page":       "home",
-		"Threads":    threads,
-		"Tags":       tags,
-		"Pagination": pagination,
-		"Filters":    filters,
-		"User":       user,
+		"Title":              pageTitle,
+		"Page":               "home",
+		"Threads":            threads,
+		"PopularCommunities": popularCommunities,
+		"UserCommunities":    userCommunities,
+		"SelectedCommunity":  selectedCommunity,
+		"Pagination":         pagination,
+		"Filters":            filters,
+		"User":               user,
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
 		log.Printf("Template execution error: %v", err)
@@ -130,15 +176,55 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
-	tags, _ := models.GetAllTags()
 	user := middleware.GetUserFromContext(r)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	// Get communities user can post to
+	userCommunityFilters := models.CommunityFilters{
+		UserID: user.ID,
+		SortBy: "name",
+		Limit:  50,
+	}
+	userCommunities, _, _ := models.GetCommunities(userCommunityFilters)
+
+	// Also get public communities
+	publicCommunityFilters := models.CommunityFilters{
+		Visibility: "public",
+		SortBy:     "name",
+		Limit:      50,
+	}
+	publicCommunities, _, _ := models.GetCommunities(publicCommunityFilters)
+
+	// Combine and deduplicate communities
+	communityMap := make(map[int]*models.Community)
+	for _, community := range userCommunities {
+		communityMap[community.ID] = &community
+	}
+	for _, community := range publicCommunities {
+		if _, exists := communityMap[community.ID]; !exists {
+			communityMap[community.ID] = &community
+		}
+	}
+
+	// Convert back to slice
+	var availableCommunities []models.Community
+	for _, community := range communityMap {
+		availableCommunities = append(availableCommunities, *community)
+	}
+
+	// Check if specific community was requested
+	requestedCommunity := r.URL.Query().Get("community")
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/create.html"))
 	data := map[string]interface{}{
-		"Title": "Create Thread - GoForum",
-		"Page":  "create-thread",
-		"Tags":  tags,
-		"User":  user,
+		"Title":              "Create Thread - GoForum",
+		"Page":               "create-thread",
+		"Communities":        availableCommunities,
+		"RequestedCommunity": requestedCommunity,
+		"User":               user,
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
 		log.Printf("Template execution error: %v", err)
@@ -236,10 +322,10 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
-		Tags        []int  `json:"tags"`
-		PostType    string `json:"post_type"` // text, link, image
-		ImageURL    string `json:"image_url"` // For image posts
-		LinkURL     string `json:"link_url"`  // For link posts
+		CommunityID int    `json:"community_id"` // Community instead of tags
+		PostType    string `json:"post_type"`    // text, link, image
+		ImageURL    string `json:"image_url"`    // For image posts
+		LinkURL     string `json:"link_url"`     // For link posts
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -281,6 +367,24 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate community selection
+	if req.CommunityID <= 0 {
+		http.Error(w, "Community selection is required", http.StatusBadRequest)
+		return
+	}
+
+	// Check if user can post in this community
+	canPost, err := models.CanUserPostInCommunity(req.CommunityID, user.ID)
+	if err != nil {
+		http.Error(w, "Failed to verify community permissions", http.StatusInternalServerError)
+		return
+	}
+
+	if !canPost {
+		http.Error(w, "You don't have permission to post in this community", http.StatusForbidden)
+		return
+	}
+
 	// For text posts, description is optional but for link posts we need either description or URL
 	if req.PostType == "link" && req.LinkURL == "" && req.Description == "" {
 		http.Error(w, "Link posts require either a URL or description", http.StatusBadRequest)
@@ -293,8 +397,8 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create the thread with media support
-	thread, err := models.CreateThreadWithMedia(req.Title, req.Description, user.ID, req.Tags, req.PostType, req.ImageURL, req.LinkURL)
+	// Create the thread in the specified community
+	thread, err := models.CreateThreadInCommunity(req.Title, req.Description, user.ID, req.CommunityID, req.PostType, req.ImageURL, req.LinkURL)
 	if err != nil {
 		log.Printf("Error creating thread: %v", err)
 		http.Error(w, "Failed to create thread: "+err.Error(), http.StatusInternalServerError)

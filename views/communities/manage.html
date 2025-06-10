@@ -1,0 +1,495 @@
+{{define "content"}}
+<div class="manage-community-container">
+    <div class="manage-header">
+        <h1>Manage r/{{.Community.DisplayName}}</h1>
+        <div class="community-badges">
+            <span class="visibility-badge visibility-{{.Community.Visibility}}">
+                {{if eq .Community.Visibility "public"}}<i class="fas fa-globe"></i>{{end}}
+                {{if eq .Community.Visibility "private"}}<i class="fas fa-lock"></i>{{end}}
+                {{if eq .Community.Visibility "restricted"}}<i class="fas fa-shield-alt"></i>{{end}}
+                {{title .Community.Visibility}}
+            </span>
+            <span class="approval-badge">
+                {{if eq .Community.JoinApproval "open"}}<i class="fas fa-door-open"></i>{{end}}
+                {{if eq .Community.JoinApproval "approval_required"}}<i class="fas fa-user-check"></i>{{end}}
+                {{if eq .Community.JoinApproval "invite_only"}}<i class="fas fa-envelope"></i>{{end}}
+                {{title .Community.JoinApproval}}
+            </span>
+        </div>
+    </div>
+
+    <div class="manage-content">
+        <!-- Community Settings -->
+        <div class="manage-section">
+            <h2>Community Settings</h2>
+            <form id="communitySettingsForm" class="settings-form">
+                <div class="form-group">
+                    <label for="displayName">Display Name</label>
+                    <input type="text" id="displayName" name="display_name" value="{{.Community.DisplayName}}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4">{{.Community.Description}}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="visibility">Visibility</label>
+                    <select id="visibility" name="visibility">
+                        <option value="public" {{if eq .Community.Visibility "public"}}selected{{end}}>Public</option>
+                        <option value="private" {{if eq .Community.Visibility "private"}}selected{{end}}>Private</option>
+                        <option value="restricted" {{if eq .Community.Visibility "restricted"}}selected{{end}}>Restricted</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="joinApproval">Join Approval</label>
+                    <select id="joinApproval" name="join_approval">
+                        <option value="open" {{if eq .Community.JoinApproval "open"}}selected{{end}}>Open</option>
+                        <option value="approval_required" {{if eq .Community.JoinApproval "approval_required"}}selected{{end}}>Approval Required</option>
+                        <option value="invite_only" {{if eq .Community.JoinApproval "invite_only"}}selected{{end}}>Invite Only</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Moderators -->
+        <div class="manage-section">
+            <h2>Moderators</h2>
+            <div class="moderators-list">
+                {{range .Moderators}}
+                <div class="moderator-item">
+                    <div class="moderator-info">
+                        <div class="user-avatar-small {{getAvatarClass (getAvatarStyle .User)}}">
+                            {{if .User.AvatarURL}}
+                                <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
+                            {{else}}
+                                <span class="avatar-initial">{{getUserInitial .User}}</span>
+                            {{end}}
+                        </div>
+                        <div class="moderator-details">
+                            <a href="/user/{{.User.Username}}" class="moderator-username">u/{{.User.Username}}</a>
+                            <span class="moderator-role">{{title .Role}}</span>
+                        </div>
+                    </div>
+                    {{if eq $.Community.UserRole "creator"}}
+                        {{if ne .Role "creator"}}
+                        <div class="moderator-actions">
+                            <select class="role-select" onchange="updateModeratorRole('{{.User.ID}}', this.value)">
+                                <option value="member" {{if eq .Role "member"}}selected{{end}}>Member</option>
+                                <option value="moderator" {{if eq .Role "moderator"}}selected{{end}}>Moderator</option>
+                                <option value="admin" {{if eq .Role "admin"}}selected{{end}}>Admin</option>
+                            </select>
+                            <button class="btn btn-danger btn-sm" onclick="removeModerator('{{.User.ID}}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        {{end}}
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Pending Join Requests -->
+        {{if .PendingRequests}}
+        <div class="manage-section">
+            <h2>Pending Join Requests</h2>
+            <div class="pending-requests">
+                {{range .PendingRequests}}
+                <div class="request-item">
+                    <div class="request-user">
+                        <div class="user-avatar-small {{getAvatarClass (getAvatarStyle .User)}}">
+                            {{if .User.AvatarURL}}
+                                <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
+                            {{else}}
+                                <span class="avatar-initial">{{getUserInitial .User}}</span>
+                            {{end}}
+                        </div>
+                        <div class="request-details">
+                            <a href="/user/{{.User.Username}}" class="request-username">u/{{.User.Username}}</a>
+                            <span class="request-date">{{timeAgo .CreatedAt}}</span>
+                        </div>
+                    </div>
+                    {{if .Message}}
+                        <p class="request-message">{{.Message}}</p>
+                    {{end}}
+                    <div class="request-actions">
+                        <button class="btn btn-primary btn-sm" onclick="processRequest('{{.ID}}', true)">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="processRequest('{{.ID}}', false)">
+                            <i class="fas fa-times"></i> Deny
+                        </button>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<script>
+// Update community settings
+document.getElementById('communitySettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        display_name: document.getElementById('displayName').value,
+        description: document.getElementById('description').value,
+        visibility: document.getElementById('visibility').value,
+        join_approval: document.getElementById('joinApproval').value
+    };
+    
+    try {
+        const response = await fetch(`/api/communities/{{.Community.ID}}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            if (window.GoForum) {
+                GoForum.showNotification('Community settings updated successfully', 'success');
+            } else {
+                alert('Community settings updated successfully');
+            }
+            location.reload();
+        } else {
+            const result = await response.text();
+            if (window.GoForum) {
+                GoForum.showNotification(result, 'error');
+            } else {
+                alert('Failed to update settings: ' + result);
+            }
+        }
+    } catch (error) {
+        if (window.GoForum) {
+            GoForum.showNotification('Failed to update settings. Please try again.', 'error');
+        } else {
+            alert('Failed to update settings. Please try again.');
+        }
+    }
+});
+
+// Update moderator role
+async function updateModeratorRole(userId, role) {
+    try {
+        const response = await fetch(`/api/communities/{{.Community.ID}}/moderators/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add',
+                role: role
+            })
+        });
+        
+        if (response.ok) {
+            if (window.GoForum) {
+                GoForum.showNotification('Moderator role updated successfully', 'success');
+            } else {
+                alert('Moderator role updated successfully');
+            }
+            location.reload();
+        } else {
+            const result = await response.text();
+            if (window.GoForum) {
+                GoForum.showNotification(result, 'error');
+            } else {
+                alert('Failed to update role: ' + result);
+            }
+        }
+    } catch (error) {
+        if (window.GoForum) {
+            GoForum.showNotification('Failed to update role. Please try again.', 'error');
+        } else {
+            alert('Failed to update role. Please try again.');
+        }
+    }
+}
+
+// Remove moderator
+async function removeModerator(userId) {
+    if (!confirm('Are you sure you want to remove this moderator?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/communities/{{.Community.ID}}/moderators/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'remove'
+            })
+        });
+        
+        if (response.ok) {
+            if (window.GoForum) {
+                GoForum.showNotification('Moderator removed successfully', 'success');
+            } else {
+                alert('Moderator removed successfully');
+            }
+            location.reload();
+        } else {
+            const result = await response.text();
+            if (window.GoForum) {
+                GoForum.showNotification(result, 'error');
+            } else {
+                alert('Failed to remove moderator: ' + result);
+            }
+        }
+    } catch (error) {
+        if (window.GoForum) {
+            GoForum.showNotification('Failed to remove moderator. Please try again.', 'error');
+        } else {
+            alert('Failed to remove moderator. Please try again.');
+        }
+    }
+}
+
+// Process join request
+async function processRequest(requestId, approved) {
+    try {
+        const response = await fetch(`/api/communities/join-requests/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ approved: approved })
+        });
+        
+        if (response.ok) {
+            if (window.GoForum) {
+                GoForum.showNotification(`Join request ${approved ? 'approved' : 'rejected'} successfully`, 'success');
+            } else {
+                alert(`Join request ${approved ? 'approved' : 'rejected'} successfully`);
+            }
+            location.reload();
+        } else {
+            const result = await response.text();
+            if (window.GoForum) {
+                GoForum.showNotification(result, 'error');
+            } else {
+                alert('Failed to process request: ' + result);
+            }
+        }
+    } catch (error) {
+        if (window.GoForum) {
+            GoForum.showNotification('Failed to process request. Please try again.', 'error');
+        } else {
+            alert('Failed to process request. Please try again.');
+        }
+    }
+}
+</script>
+
+<style>
+.manage-community-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.manage-header {
+    margin-bottom: 30px;
+}
+
+.manage-header h1 {
+    margin: 0 0 10px 0;
+    color: #1a1a1b;
+}
+
+.community-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.manage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.manage-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.manage-section h2 {
+    margin: 0 0 20px 0;
+    color: #1a1a1b;
+    font-size: 18px;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: #1a1a1b;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.moderators-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moderator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f6f7f8;
+    border-radius: 4px;
+}
+
+.moderator-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.moderator-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.moderator-username {
+    color: #1a1a1b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.moderator-username:hover {
+    text-decoration: underline;
+}
+
+.moderator-role {
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.moderator-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.pending-requests {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.request-item {
+    padding: 16px;
+    background: #f6f7f8;
+    border-radius: 4px;
+}
+
+.request-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.request-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.request-username {
+    color: #1a1a1b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.request-username:hover {
+    text-decoration: underline;
+}
+
+.request-date {
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.request-message {
+    color: #1a1a1b;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+    .manage-community-container {
+        padding: 12px;
+    }
+    
+    .moderator-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .moderator-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+</style>
+{{end}} 

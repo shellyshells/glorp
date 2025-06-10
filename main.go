@@ -27,6 +27,10 @@ func main() {
 	homeRoutes.HandleFunc("/", controllers.HomeHandler).Methods("GET")
 	homeRoutes.HandleFunc("/threads/{id:[0-9]+}", controllers.ShowThreadHandler).Methods("GET")
 
+	// Community routes (with optional auth)
+	homeRoutes.HandleFunc("/communities", controllers.CommunityListHandler).Methods("GET")
+	homeRoutes.HandleFunc("/r/{name}", controllers.CommunityViewHandler).Methods("GET")
+
 	// Public auth routes (no middleware)
 	r.HandleFunc("/register", controllers.RegisterViewHandler).Methods("GET")
 	r.HandleFunc("/login", controllers.LoginViewHandler).Methods("GET")
@@ -38,6 +42,10 @@ func main() {
 	protected.HandleFunc("/threads/{id:[0-9]+}/edit", controllers.EditThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/profile", controllers.ProfileHandler).Methods("GET")
 	protected.HandleFunc("/settings", controllers.SettingsHandler).Methods("GET")
+
+	// Protected community routes
+	protected.HandleFunc("/communities/create", controllers.CreateCommunityViewHandler).Methods("GET")
+	protected.HandleFunc("/r/{name}/manage", controllers.CommunityManageHandler).Methods("GET")
 
 	// User profile routes - these need to be accessible to view other users' profiles
 	userRoutes := r.PathPrefix("/user").Subrouter()
@@ -55,6 +63,7 @@ func main() {
 	// Public API routes
 	api.HandleFunc("/threads", controllers.GetThreadsHandler).Methods("GET")
 	api.HandleFunc("/search", controllers.SearchHandler).Methods("GET")
+	api.HandleFunc("/communities", controllers.GetCommunitiesHandler).Methods("GET")
 
 	// Auth API routes (no middleware required)
 	api.HandleFunc("/register", controllers.RegisterHandler).Methods("POST")
@@ -76,6 +85,14 @@ func main() {
 	apiProtected.HandleFunc("/messages/{id:[0-9]+}", controllers.DeleteMessageHandler).Methods("DELETE")
 	apiProtected.HandleFunc("/messages/{id:[0-9]+}/vote", controllers.VoteMessageHandler).Methods("POST")
 
+	// Community API
+	apiProtected.HandleFunc("/communities", controllers.CreateCommunityHandler).Methods("POST")
+	apiProtected.HandleFunc("/communities/{id:[0-9]+}", controllers.UpdateCommunityHandler).Methods("PUT")
+	apiProtected.HandleFunc("/communities/{id:[0-9]+}/join", controllers.JoinCommunityHandler).Methods("POST")
+	apiProtected.HandleFunc("/communities/{id:[0-9]+}/leave", controllers.LeaveCommunityHandler).Methods("POST")
+	apiProtected.HandleFunc("/communities/join-requests/{id:[0-9]+}", controllers.ProcessJoinRequestHandler).Methods("POST")
+	apiProtected.HandleFunc("/communities/{communityId:[0-9]+}/moderators/{userId:[0-9]+}", controllers.ManageModeratorHandler).Methods("POST")
+
 	// Image upload API
 	apiProtected.HandleFunc("/upload/image", controllers.UploadImageHandler).Methods("POST")
 	apiProtected.HandleFunc("/upload/image/{filename}", controllers.DeleteImageHandler).Methods("DELETE")
@@ -94,6 +111,6 @@ func main() {
 	log.Println("🚀 GoForum server starting on :8080")
 	log.Println("📱 Visit http://localhost:8080 to access the forum")
 	log.Println("👤 Default admin: username=admin, password=AdminPassword123!")
-	log.Println("🎨 Avatar system enabled with customizable colors!")
+	log.Println("🏘️  Community system enabled!")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
