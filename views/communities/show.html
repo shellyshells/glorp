@@ -404,15 +404,15 @@ async function joinCommunity(communityId) {
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to join community: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to join community. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to join community. Please try again.', 'error');
         } else {
             alert('Failed to join community. Please try again.');
         }
@@ -437,15 +437,15 @@ async function leaveCommunity(communityId) {
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to leave community: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to leave community. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to leave community. Please try again.', 'error');
         } else {
             alert('Failed to leave community. Please try again.');
         }
@@ -467,15 +467,15 @@ async function processRequest(requestId, approved) {
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to process request: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to process request. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to process request. Please try again.', 'error');
         } else {
             alert('Failed to process request. Please try again.');
         }
@@ -509,34 +509,34 @@ async function voteThread(threadId, voteType) {
                 downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
             }
             
-            if (window.GoForum) {
+            if (window.Glorp) {
                 const action = result.user_vote === voteType ? 
                     (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                GoForum.showNotification(`Post ${action}!`, 'success');
+                Glorp.showNotification(`Post ${action}!`, 'success');
             }
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error voting:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to vote. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to vote. Please try again.', 'error');
         }
     }
 }
 
 function shareThread(threadId) {
-    if (window.GoForum) {
-        GoForum.showNotification('Share feature coming soon!', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Share feature coming soon!', 'info');
     }
 }
 
 function showThreadOptions(threadId) {
-    if (window.GoForum) {
-        GoForum.showNotification('Thread options coming soon!', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Thread options coming soon!', 'info');
     }
 }
 </script>

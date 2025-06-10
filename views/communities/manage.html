@@ -156,23 +156,23 @@ document.getElementById('communitySettingsForm').addEventListener('submit', asyn
         });
         
         if (response.ok) {
-            if (window.GoForum) {
-                GoForum.showNotification('Community settings updated successfully', 'success');
+            if (window.Glorp) {
+                Glorp.showNotification('Community settings updated successfully', 'success');
             } else {
                 alert('Community settings updated successfully');
             }
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to update settings: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to update settings. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to update settings. Please try again.', 'error');
         } else {
             alert('Failed to update settings. Please try again.');
         }
@@ -194,23 +194,23 @@ async function updateModeratorRole(userId, role) {
         });
         
         if (response.ok) {
-            if (window.GoForum) {
-                GoForum.showNotification('Moderator role updated successfully', 'success');
+            if (window.Glorp) {
+                Glorp.showNotification('Moderator role updated successfully', 'success');
             } else {
                 alert('Moderator role updated successfully');
             }
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to update role: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to update role. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to update role. Please try again.', 'error');
         } else {
             alert('Failed to update role. Please try again.');
         }
@@ -235,23 +235,23 @@ async function removeModerator(userId) {
         });
         
         if (response.ok) {
-            if (window.GoForum) {
-                GoForum.showNotification('Moderator removed successfully', 'success');
+            if (window.Glorp) {
+                Glorp.showNotification('Moderator removed successfully', 'success');
             } else {
                 alert('Moderator removed successfully');
             }
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to remove moderator: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to remove moderator. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to remove moderator. Please try again.', 'error');
         } else {
             alert('Failed to remove moderator. Please try again.');
         }
@@ -270,23 +270,23 @@ async function processRequest(requestId, approved) {
         });
         
         if (response.ok) {
-            if (window.GoForum) {
-                GoForum.showNotification(`Join request ${approved ? 'approved' : 'rejected'} successfully`, 'success');
+            if (window.Glorp) {
+                Glorp.showNotification(`Join request ${approved ? 'approved' : 'rejected'} successfully`, 'success');
             } else {
                 alert(`Join request ${approved ? 'approved' : 'rejected'} successfully`);
             }
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             } else {
                 alert('Failed to process request: ' + result);
             }
         }
     } catch (error) {
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to process request. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to process request. Please try again.', 'error');
         } else {
             alert('Failed to process request. Please try again.');
         }

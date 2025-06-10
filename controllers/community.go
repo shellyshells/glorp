@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"goforum/config"
-	"goforum/middleware"
-	"goforum/models"
-	"goforum/utils"
+	"glorp/config"
+	"glorp/middleware"
+	"glorp/models"
+	"glorp/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -46,7 +46,7 @@ func CommunityListHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/index.html"))
 	data := map[string]interface{}{
-		"Title":       "Communities - GoForum",
+		"Title":       "Communities - Glorp",
 		"Page":        "communities",
 		"Communities": communities,
 		"Pagination":  pagination,
@@ -107,7 +107,7 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/show.html"))
 	data := map[string]interface{}{
-		"Title":           "r/" + community.DisplayName + " - GoForum",
+		"Title":           "r/" + community.DisplayName + " - Glorp",
 		"Page":            "community",
 		"Community":       community,
 		"Threads":         threads,
@@ -132,7 +132,7 @@ func CreateCommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/create.html"))
 	data := map[string]interface{}{
-		"Title": "Create Community - GoForum",
+		"Title": "Create Community - Glorp",
 		"Page":  "create-community",
 		"User":  user,
 	}
@@ -171,7 +171,7 @@ func CommunityManageHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/manage.html"))
 	data := map[string]interface{}{
-		"Title":           "Manage r/" + community.DisplayName + " - GoForum",
+		"Title":           "Manage r/" + community.DisplayName + " - Glorp",
 		"Page":            "community-manage",
 		"Community":       community,
 		"Moderators":      moderators,

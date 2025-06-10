@@ -423,19 +423,19 @@ async function voteComment(commentId, voteType) {
             upvoteBtn.classList.toggle('active', result.user_vote === 1);
             downvoteBtn.classList.toggle('active', result.user_vote === -1);
             
-            if (window.GoForum) {
-                GoForum.showNotification('Vote recorded!', 'success');
+            if (window.Glorp) {
+                Glorp.showNotification('Vote recorded!', 'success');
             }
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error voting:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to vote. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to vote. Please try again.', 'error');
         }
     }
 }
@@ -443,8 +443,8 @@ async function voteComment(commentId, voteType) {
 // Vote thread functionality (placeholder)
 async function voteThread(threadId, voteType) {
     // This would be implemented when you add thread voting
-    if (window.GoForum) {
-        GoForum.showNotification('Thread voting coming soon!', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Thread voting coming soon!', 'info');
     }
 }
 
@@ -463,14 +463,14 @@ async function deleteComment(commentId) {
             location.reload(); // Refresh to remove deleted comment
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error deleting comment:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to delete comment. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to delete comment. Please try again.', 'error');
         }
     }
 }
@@ -487,22 +487,22 @@ async function deleteThread(threadId) {
         });
         
         if (response.ok) {
-            if (window.GoForum) {
-                GoForum.showNotification('Thread deleted successfully', 'success');
+            if (window.Glorp) {
+                Glorp.showNotification('Thread deleted successfully', 'success');
             }
             setTimeout(() => {
                 window.location.href = '/'; // Redirect to home
             }, 1000);
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error deleting thread:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to delete thread. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to delete thread. Please try again.', 'error');
         }
     }
 }
@@ -538,8 +538,8 @@ async function submitReply(event, parentCommentId) {
     const content = textarea.value.trim();
     
     if (!content) {
-        if (window.GoForum) {
-            GoForum.showNotification('Reply cannot be empty', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Reply cannot be empty', 'error');
         }
         return;
     }
@@ -569,14 +569,14 @@ async function submitReply(event, parentCommentId) {
             location.reload();
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error posting reply:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to post reply. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to post reply. Please try again.', 'error');
         }
     } finally {
         submitBtn.disabled = false;
@@ -639,21 +639,21 @@ async function voteThread(threadId, voteType) {
                 downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
             }
             
-            if (window.GoForum) {
+            if (window.Glorp) {
                 const action = result.user_vote === voteType ? 
                     (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                GoForum.showNotification(`Post ${action}!`, 'success');
+                Glorp.showNotification(`Post ${action}!`, 'success');
             }
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error voting on thread:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to vote. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to vote. Please try again.', 'error');
         }
     }
 }
@@ -713,8 +713,8 @@ function copyShareLink() {
     input.setSelectionRange(0, 99999);
     document.execCommand('copy');
     
-    if (window.GoForum) {
-        GoForum.showNotification('Link copied to clipboard!', 'success');
+    if (window.Glorp) {
+        Glorp.showNotification('Link copied to clipboard!', 'success');
     }
     closeModal('share-modal');
 }
@@ -725,8 +725,8 @@ function closeModal(modalId) {
 
 // Save functionality
 function saveThread(threadId) {
-    if (window.GoForum) {
-        GoForum.showNotification('Save feature coming soon!', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Save feature coming soon!', 'info');
     }
 }
 

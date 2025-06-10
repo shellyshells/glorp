@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"goforum/config"
+	"glorp/config"
 )
 
 type Tag struct {

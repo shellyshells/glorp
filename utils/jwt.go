@@ -27,7 +27,7 @@ func generateRandomSecret() string {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
 		// Fallback to a default secret if random generation fails
-		return "goforum-default-secret-key-change-in-production-2024"
+		return "glorp-default-secret-key-change-in-production-2024"
 	}
 	return hex.EncodeToString(bytes)
 }
@@ -47,7 +47,7 @@ func GenerateJWT(userID int, username, role string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "goforum",
+			Issuer:    "glorp",
 			Subject:   username,
 		},
 	}

@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"goforum/config"
-	"goforum/controllers"
-	"goforum/middleware"
+	"glorp/config"
+	"glorp/controllers"
+	"glorp/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -108,7 +108,7 @@ func main() {
 	apiAdmin.HandleFunc("/ban/{id:[0-9]+}", controllers.BanUserHandler).Methods("POST")
 	apiAdmin.HandleFunc("/threads/{id:[0-9]+}/status", controllers.UpdateThreadStatusHandler).Methods("PUT")
 
-	log.Println("🚀 GoForum server starting on :8080")
+	log.Println("🚀 Glorp server starting on :8080")
 	log.Println("📱 Visit http://localhost:8080 to access the forum")
 	log.Println("👤 Default admin: username=admin, password=AdminPassword123!")
 	log.Println("🏘️  Community system enabled!")

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"goforum/models"
-	"goforum/utils"
+	"glorp/models"
+	"glorp/utils"
 )
 
 func SearchHandler(w http.ResponseWriter, r *http.Request) {

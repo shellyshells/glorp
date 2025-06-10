@@ -1,4 +1,4 @@
--- Migration script to add community system to existing GoForum database
+-- Migration script to add community system to existing glorp database
 -- Run this script to upgrade from tag-based to community-based system
 
 BEGIN TRANSACTION;

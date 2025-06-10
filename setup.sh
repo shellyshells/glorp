@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# GoForum Setup Script
-echo "🚀 Setting up GoForum..."
+# Glorp Setup Script
+echo "🚀 Setting up Glorp..."
 
 # Check if Go is installed
 if ! command -v go &> /dev/null; then
@@ -14,7 +14,7 @@ echo "✅ Go is installed: $(go version)"
 # Initialize Go module if not exists
 if [ ! -f "go.mod" ]; then
     echo "📦 Initializing Go module..."
-    go mod init goforum
+    go mod init glorp
 fi
 
 # Install dependencies
@@ -32,15 +32,15 @@ mkdir -p database docs
 
 # Build the application
 echo "🔨 Building application..."
-go build -o goforum
+go build -o glorp
 
 if [ $? -eq 0 ]; then
     echo "✅ Build successful!"
     echo ""
-    echo "🎉 GoForum is ready to run!"
+    echo "🎉 Glorp is ready to run!"
     echo ""
     echo "To start the server:"
-    echo "  ./goforum"
+    echo "  ./Glorp"
     echo "  or"
     echo "  go run main.go"
     echo ""

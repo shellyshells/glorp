@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"goforum/middleware"
-	"goforum/models"
+	"glorp/middleware"
+	"glorp/models"
 
 	"github.com/gorilla/mux"
 )
@@ -28,7 +28,7 @@ func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/admin/dashboard.html"))
 	data := map[string]interface{}{
-		"Title":         "Admin Dashboard - GoForum",
+		"Title":         "Admin Dashboard - Glorp",
 		"Page":          "admin-dashboard",
 		"User":          user,
 		"TotalThreads":  totalThreads,

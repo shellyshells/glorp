@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"goforum/middleware"
-	"goforum/models"
-	"goforum/utils"
+	"glorp/middleware"
+	"glorp/models"
+	"glorp/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -87,9 +87,9 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	pagination := utils.CalculatePagination(total, page, limit)
 
 	// Determine page title
-	pageTitle := "GoForum - Home"
+	pageTitle := "Glorp - Home"
 	if selectedCommunity != nil {
-		pageTitle = "r/" + selectedCommunity.DisplayName + " - GoForum"
+		pageTitle = "r/" + selectedCommunity.DisplayName + " - Glorp"
 	}
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/index.html"))
@@ -161,7 +161,7 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/show.html"))
 	data := map[string]interface{}{
-		"Title":      thread.Title + " - GoForum",
+		"Title":      thread.Title + " - Glorp",
 		"Page":       "thread",
 		"Thread":     thread,
 		"Messages":   messages,
@@ -220,7 +220,7 @@ func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/create.html"))
 	data := map[string]interface{}{
-		"Title":              "Create Thread - GoForum",
+		"Title":              "Create Thread - Glorp",
 		"Page":               "create-thread",
 		"Communities":        availableCommunities,
 		"RequestedCommunity": requestedCommunity,
@@ -262,7 +262,7 @@ func EditThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/edit.html"))
 	data := map[string]interface{}{
-		"Title":  "Edit Thread - GoForum",
+		"Title":  "Edit Thread - Glorp",
 		"Page":   "edit-thread",
 		"Thread": thread,
 		"Tags":   tags,

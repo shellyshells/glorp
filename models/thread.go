@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"goforum/config"
+	"glorp/config"
 )
 
 type Thread struct {

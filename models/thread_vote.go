@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"goforum/config"
+	"glorp/config"
 )
 
 type ThreadVote struct {

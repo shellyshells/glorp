@@ -1,4 +1,4 @@
-# GoForum - Reddit-inspired Forum
+# Glorp - Reddit-inspired Forum
 
 A modern, responsive forum application built with Go, featuring all the essential discussion platform functionalities.
 
@@ -32,7 +32,7 @@ A modern, responsive forum application built with Go, featuring all the essentia
 ## 📁 Project Structure
 
 ```
-goforum/
+glorp/
 ├── README.md
 ├── go.mod
 ├── go.sum
@@ -91,12 +91,12 @@ goforum/
 1. **Clone the repository:**
    ```bash
    git clone <your-repository-url>
-   cd goforum
+   cd glorp
    ```
 
 2. **Install dependencies:**
    ```bash
-   go mod init goforum
+   go mod init glorp
    go get github.com/golang-jwt/jwt/v4
    go get github.com/gorilla/mux
    go get github.com/mattn/go-sqlite3

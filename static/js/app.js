@@ -1,4 +1,4 @@
-// Enhanced JavaScript functionality for GoForum
+// Enhanced JavaScript functionality for glorp
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all functionality
@@ -185,7 +185,7 @@ function initializeNotifications() {
     if (error === 'banned') {
         showNotification('Your account has been banned', 'error');
     } else if (success === 'registered') {
-        showNotification('Registration successful! Welcome to GoForum!', 'success');
+        showNotification('Registration successful! Welcome to Glorp!', 'success');
     }
 }
 
@@ -497,7 +497,7 @@ errorStyle.textContent = `
 document.head.appendChild(errorStyle);
 
 // Export functions for global use
-window.GoForum = {
+window.Glorp = {
     showNotification,
     formatDate,
     truncateText,
@@ -508,9 +508,9 @@ window.GoForum = {
 };
 
 // Add CSS animations if not already present
-if (!document.querySelector('#goforum-animations')) {
+if (!document.querySelector('#glorp-animations')) {
     const animationStyle = document.createElement('style');
-    animationStyle.id = 'goforum-animations';
+    animationStyle.id = 'glorp-animations';
     animationStyle.textContent = `
         @keyframes slideIn {
             from {

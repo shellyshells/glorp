@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"goforum/middleware"
-	"goforum/models"
-	"goforum/utils"
+	"glorp/middleware"
+	"glorp/models"
+	"glorp/utils"
 
 	"github.com/gorilla/mux"
 )

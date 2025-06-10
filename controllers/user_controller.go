@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"goforum/middleware"
-	"goforum/models"
-	"goforum/utils"
+	"glorp/middleware"
+	"glorp/models"
+	"glorp/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -215,7 +215,7 @@ func SettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/user/settings.html"))
 	data := map[string]interface{}{
-		"Title": "Settings - GoForum",
+		"Title": "Settings - Glorp",
 		"Page":  "settings",
 		"User":  freshUser,
 	}

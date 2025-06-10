@@ -1,4 +1,4 @@
-module goforum
+module glorp
 
 go 1.19
 

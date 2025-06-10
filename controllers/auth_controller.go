@@ -6,14 +6,14 @@ import (
 	"log"
 	"net/http"
 
-	"goforum/models"
-	"goforum/utils"
+	"glorp/models"
+	"glorp/utils"
 )
 
 func RegisterViewHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/auth/register.html"))
 	data := map[string]interface{}{
-		"Title": "Register - GoForum",
+		"Title": "Register - Glorp",
 		"Page":  "register",
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
@@ -25,7 +25,7 @@ func RegisterViewHandler(w http.ResponseWriter, r *http.Request) {
 func LoginViewHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/auth/login.html"))
 	data := map[string]interface{}{
-		"Title": "Login - GoForum",
+		"Title": "Login - Glorp",
 		"Page":  "login",
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {

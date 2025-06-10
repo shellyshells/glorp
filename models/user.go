@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"goforum/config"
+	"glorp/config"
 )
 
 type User struct {

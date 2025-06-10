@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"goforum/models"
-	"goforum/utils"
+	"glorp/models"
+	"glorp/utils"
 )
 
 type contextKey string

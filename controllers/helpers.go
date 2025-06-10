@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"goforum/models"
+	"glorp/models"
 	"html/template"
 	"strconv"
 	"strings"

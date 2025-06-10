@@ -1,4 +1,4 @@
--- GoForum Database Seed Data
+-- Glorp Database Seed Data
 -- This file contains sample data for testing and demonstration
 
 -- Insert admin user (password: AdminPassword123!)
@@ -31,7 +31,7 @@ INSERT INTO tags (name) VALUES
 
 -- Insert sample threads
 INSERT INTO threads (title, description, author_id, status) VALUES 
-('Welcome to GoForum!', 'This is our first thread. Welcome to the community! Feel free to introduce yourself and share what you''re interested in discussing.', 1, 'open'),
+('Welcome to Glorp!', 'This is our first thread. Welcome to the community! Feel free to introduce yourself and share what you''re interested in discussing.', 1, 'open'),
 ('Best practices for Go development', 'Let''s discuss best practices when developing applications in Go. What patterns do you follow? What libraries do you recommend?', 2, 'open'),
 ('JavaScript frameworks in 2024', 'What are your thoughts on the current state of JavaScript frameworks? React, Vue, Angular, or something else?', 3, 'open'),
 ('Career advice for new developers', 'Starting out in tech can be overwhelming. Share your experiences and advice for newcomers to the field.', 4, 'open'),

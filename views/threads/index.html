@@ -740,21 +740,21 @@ async function voteThread(threadId, voteType) {
                 }, 300);
             }
             
-            if (window.GoForum) {
+            if (window.Glorp) {
                 const action = result.user_vote === voteType ? 
                     (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                GoForum.showNotification(`Post ${action}!`, 'success');
+                Glorp.showNotification(`Post ${action}!`, 'success');
             }
         } else {
             const result = await response.text();
-            if (window.GoForum) {
-                GoForum.showNotification(result, 'error');
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
             }
         }
     } catch (error) {
         console.error('Error voting:', error);
-        if (window.GoForum) {
-            GoForum.showNotification('Failed to vote. Please try again.', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to vote. Please try again.', 'error');
         }
     }
 }
@@ -775,15 +775,15 @@ function copyShareLink() {
     
     navigator.clipboard.writeText(input.value).then(() => {
         showCopyFeedback();
-        if (window.GoForum) {
-            GoForum.showNotification('Link copied to clipboard!', 'success');
+        if (window.Glorp) {
+            Glorp.showNotification('Link copied to clipboard!', 'success');
         }
     }).catch(() => {
         // Fallback for older browsers
         document.execCommand('copy');
         showCopyFeedback();
-        if (window.GoForum) {
-            GoForum.showNotification('Link copied to clipboard!', 'success');
+        if (window.Glorp) {
+            Glorp.showNotification('Link copied to clipboard!', 'success');
         }
     });
 }
@@ -803,13 +803,13 @@ function showCopyFeedback() {
 // Enhanced Social Sharing Functions
 function shareToReddit() {
     const url = document.getElementById('share-link-input').value;
-    const title = `Check out this post on GoForum!`;
+    const title = `Check out this post on Glorp!`;
     window.open(`https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
 }
 
 function shareToTwitter() {
     const url = document.getElementById('share-link-input').value;
-    const text = 'Check out this interesting post on GoForum! 🚀';
+    const text = 'Check out this interesting post on Glorp! 🚀';
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
 }
 
@@ -822,14 +822,14 @@ function shareToDiscord() {
     const url = document.getElementById('share-link-input').value;
     // Discord doesn't have direct sharing URL, so we copy and show instruction
     navigator.clipboard.writeText(url);
-    if (window.GoForum) {
-        GoForum.showNotification('Link copied! Paste it in Discord 💬', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Link copied! Paste it in Discord 💬', 'info');
     }
 }
 
 function shareToTelegram() {
     const url = document.getElementById('share-link-input').value;
-    const text = 'Check out this post on GoForum!';
+    const text = 'Check out this post on Glorp!';
     window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
 }
 
@@ -843,15 +843,15 @@ function shareToWhatsApp() {
 async function createCrossPost() {
     const community = document.getElementById('crosspost-community').value;
     if (!community) {
-        if (window.GoForum) {
-            GoForum.showNotification('Please select a community first', 'warning');
+        if (window.Glorp) {
+            Glorp.showNotification('Please select a community first', 'warning');
         }
         return;
     }
     
     if (!currentShareThreadId) {
-        if (window.GoForum) {
-            GoForum.showNotification('No post selected for cross-posting', 'error');
+        if (window.Glorp) {
+            Glorp.showNotification('No post selected for cross-posting', 'error');
         }
         return;
     }
@@ -861,8 +861,8 @@ async function createCrossPost() {
     const originalUrl = `${window.location.origin}/threads/${currentShareThreadId}`;
     const crossPostUrl = `/threads/create?crosspost=${currentShareThreadId}&community=${community}`;
     
-    if (window.GoForum) {
-        GoForum.showNotification(`Cross-posting to r/${community}...`, 'info');
+    if (window.Glorp) {
+        Glorp.showNotification(`Cross-posting to r/${community}...`, 'info');
     }
     
     // Close modal and redirect
@@ -896,7 +896,7 @@ function downloadQR() {
     
     const link = document.createElement('a');
     link.href = qrUrl;
-    link.download = 'goforum-post-qr.png';
+    link.download = 'glorp-post-qr.png';
     link.click();
 }
 
@@ -906,8 +906,8 @@ function closeModal(modalId) {
 
 // Save thread (placeholder)
 function saveThread(threadId) {
-    if (window.GoForum) {
-        GoForum.showNotification('Save feature coming soon!', 'info');
+    if (window.Glorp) {
+        Glorp.showNotification('Save feature coming soon!', 'info');
     }
 }
 
@@ -924,8 +924,8 @@ function showThreadOptions(threadId) {
     const action = prompt('Choose action:\n' + options.join('\n'));
     
     if (action) {
-        if (window.GoForum) {
-            GoForum.showNotification(`${action} feature coming soon!`, 'info');
+        if (window.Glorp) {
+            Glorp.showNotification(`${action} feature coming soon!`, 'info');
         }
     }
 }

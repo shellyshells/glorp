@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"goforum/middleware"
+	"glorp/middleware"
 
 	"github.com/gorilla/mux"
 )

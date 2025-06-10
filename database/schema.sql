@@ -1,4 +1,4 @@
--- GoForum Database Schema
+-- Glorp Database Schema
 -- This file documents the database structure used by the application
 
 -- Users table - stores user account information
