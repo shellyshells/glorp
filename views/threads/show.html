@@ -4,7 +4,7 @@
         <div class="thread-content-wrapper">
             <div class="thread-vote-section">
                 {{if .User}}
-                    <button class="vote-arrow" onclick="voteThread('{{.Thread.ID}}', 1)" title="Upvote">
+                    <button class="vote-arrow {{if eq .Thread.UserVote 1}}upvoted{{end}}" onclick="voteThread('{{.Thread.ID}}', 1)" title="Upvote">
                         <i class="fas fa-arrow-up"></i>
                     </button>
                 {{else}}
@@ -13,10 +13,10 @@
                     </a>
                 {{end}}
                 
-                <div class="vote-score" id="thread-score">{{.Thread.MessageCount}}</div>
+                <div class="vote-score" id="thread-score">{{.Thread.Score}}</div>
                 
                 {{if .User}}
-                    <button class="vote-arrow" onclick="voteThread('{{.Thread.ID}}', -1)" title="Downvote">
+                    <button class="vote-arrow {{if eq .Thread.UserVote -1}}downvoted{{end}}" onclick="voteThread('{{.Thread.ID}}', -1)" title="Downvote">
                         <i class="fas fa-arrow-down"></i>
                     </button>
                 {{else}}
@@ -197,7 +197,7 @@
                 <div class="comment-item" data-comment-id="{{.ID}}">
                     <div class="comment-vote-section">
                         {{if $.User}}
-                            <button class="comment-vote-btn {{if eq .UserVote 1}}active{{end}}" onclick="voteComment('{{.ID}}', 1)">
+                            <button class="comment-vote-btn {{if eq .UserVote 1}}upvoted{{end}}" onclick="voteComment('{{.ID}}', 1)">
                                 <i class="fas fa-arrow-up"></i>
                             </button>
                         {{else}}
@@ -209,7 +209,7 @@
                         <span class="comment-score">{{.Score}}</span>
                         
                         {{if $.User}}
-                            <button class="comment-vote-btn {{if eq .UserVote -1}}active{{end}}" onclick="voteComment('{{.ID}}', -1)">
+                            <button class="comment-vote-btn {{if eq .UserVote -1}}downvoted{{end}}" onclick="voteComment('{{.ID}}', -1)">
                                 <i class="fas fa-arrow-down"></i>
                             </button>
                         {{else}}
@@ -244,7 +244,7 @@
                         
                         <div class="comment-actions">
                             {{if $.User}}
-                                <button class="comment-action-btn" onclick="replyToComment('{{.ID}}')">
+                                <button class="comment-action-btn" onclick="toggleReplyForm('{{.ID}}')">
                                     <i class="fas fa-reply"></i> Reply
                                 </button>
                             {{end}}
@@ -252,6 +252,13 @@
                             <button class="comment-action-btn" onclick="shareComment('{{.ID}}')">
                                 <i class="fas fa-share"></i> Share
                             </button>
+                            
+                            {{if and (.Replies) (gt (len .Replies) 0)}}
+                                <button class="comment-action-btn toggle-replies-btn" onclick="toggleReplies('{{.ID}}')" data-expanded="true">
+                                    <i class="fas fa-chevron-up"></i>
+                                    <span class="toggle-text">Hide {{len .Replies}} {{if eq (len .Replies) 1}}reply{{else}}replies{{end}}</span>
+                                </button>
+                            {{end}}
                             
                             {{if $.User}}
                                 {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
@@ -263,7 +270,20 @@
                         </div>
                         
                         <!-- Reply form (hidden by default) -->
+                        {{if $.User}}
                         <div class="reply-form" id="reply-form-{{.ID}}" style="display: none;">
+                            <div class="reply-form-header">
+                                <div class="reply-as-user">
+                                    <div class="user-avatar-small {{getAvatarClass (getAvatarStyle $.User)}}">
+                                        {{if $.User.AvatarURL}}
+                                            <img src="{{$.User.AvatarURL}}" alt="{{$.User.Username}}" class="avatar-img">
+                                        {{else}}
+                                            <span class="avatar-initial">{{getUserInitial $.User}}</span>
+                                        {{end}}
+                                    </div>
+                                    <span>Reply as <strong>u/{{$.User.Username}}</strong></span>
+                                </div>
+                            </div>
                             <form onsubmit="submitReply(event, '{{.ID}}')">
                                 <textarea placeholder="What are your thoughts?" required></textarea>
                                 <div class="reply-form-actions">
@@ -272,6 +292,112 @@
                                 </div>
                             </form>
                         </div>
+                        {{end}}
+
+                        <!-- Nested Replies -->
+                        {{if .Replies}}
+                        <div class="nested-replies" id="replies-{{.ID}}">
+                            {{range .Replies}}
+                            <div class="comment-item nested-comment" data-comment-id="{{.ID}}" data-level="{{.Level}}">
+                                <div class="comment-vote-section">
+                                    {{if $.User}}
+                                        <button class="comment-vote-btn {{if eq .UserVote 1}}upvoted{{end}}" onclick="voteComment('{{.ID}}', 1)">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                    {{else}}
+                                        <a href="/login" class="comment-vote-btn" title="Login to vote">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </a>
+                                    {{end}}
+                                    
+                                    <span class="comment-score">{{.Score}}</span>
+                                    
+                                    {{if $.User}}
+                                        <button class="comment-vote-btn {{if eq .UserVote -1}}downvoted{{end}}" onclick="voteComment('{{.ID}}', -1)">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                    {{else}}
+                                        <a href="/login" class="comment-vote-btn" title="Login to vote">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </a>
+                                    {{end}}
+                                </div>
+                                
+                                <div class="comment-content-section">
+                                    <div class="comment-header">
+                                        <div class="comment-author-info">
+                                            <div class="user-avatar-small {{getAvatarClass (getAvatarStyle .Author)}}">
+                                                {{if .Author.AvatarURL}}
+                                                    <img src="{{.Author.AvatarURL}}" alt="{{.Author.Username}}" class="avatar-img">
+                                                {{else}}
+                                                    <span class="avatar-initial">{{getUserInitial .Author}}</span>
+                                                {{end}}
+                                                {{if isUserOnline .Author}}
+                                                    <div class="online-indicator"></div>
+                                                {{end}}
+                                            </div>
+                                            <a href="/user/{{.Author.Username}}" class="comment-author">u/{{.Author.Username}}</a>
+                                        </div>
+                                        <span class="comment-score-inline">{{.Score}} points</span>
+                                        <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
+                                        <span class="comment-reply-indicator">
+                                            <i class="fas fa-reply"></i> reply
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="comment-content">
+                                        <p>{{.Content}}</p>
+                                    </div>
+                                    
+                                    <div class="comment-actions">
+                                        {{if $.User}}
+                                            <button class="comment-action-btn" onclick="toggleReplyForm('{{.ID}}')">
+                                                <i class="fas fa-reply"></i> Reply
+                                            </button>
+                                        {{end}}
+                                        
+                                        <button class="comment-action-btn" onclick="shareComment('{{.ID}}')">
+                                            <i class="fas fa-share"></i> Share
+                                        </button>
+                                        
+                                        {{if $.User}}
+                                            {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
+                                            <button class="comment-action-btn danger" onclick="deleteComment('{{.ID}}')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                            {{end}}
+                                        {{end}}
+                                    </div>
+                                    
+                                    <!-- Reply form for nested comment -->
+                                    {{if $.User}}
+                                    <div class="reply-form" id="reply-form-{{.ID}}" style="display: none;">
+                                        <div class="reply-form-header">
+                                            <div class="reply-as-user">
+                                                <div class="user-avatar-small {{getAvatarClass (getAvatarStyle $.User)}}">
+                                                    {{if $.User.AvatarURL}}
+                                                        <img src="{{$.User.AvatarURL}}" alt="{{$.User.Username}}" class="avatar-img">
+                                                    {{else}}
+                                                        <span class="avatar-initial">{{getUserInitial $.User}}</span>
+                                                    {{end}}
+                                                </div>
+                                                <span>Reply as <strong>u/{{$.User.Username}}</strong></span>
+                                            </div>
+                                        </div>
+                                        <form onsubmit="submitReply(event, '{{.ID}}')">
+                                            <textarea placeholder="What are your thoughts?" required></textarea>
+                                            <div class="reply-form-actions">
+                                                <button type="button" onclick="cancelReply('{{.ID}}')" class="btn btn-outline btn-sm">Cancel</button>
+                                                <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            </div>
+                            {{end}}
+                        </div>
+                        {{end}}
                     </div>
                 </div>
                 {{end}}
@@ -411,20 +537,29 @@ async function voteComment(commentId, voteType) {
         if (response.ok) {
             const result = await response.json();
             const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (!commentElement) return;
+            
             const scoreElements = commentElement.querySelectorAll('.comment-score');
             const voteButtons = commentElement.querySelectorAll('.comment-vote-btn');
             
             scoreElements.forEach(el => el.textContent = result.score);
-            commentElement.querySelector('.comment-score-inline').textContent = `${result.score} points`;
+            const scoreInline = commentElement.querySelector('.comment-score-inline');
+            if (scoreInline) {
+                scoreInline.textContent = `${result.score} points`;
+            }
             
             const upvoteBtn = voteButtons[0];
             const downvoteBtn = voteButtons[1];
             
-            upvoteBtn.classList.toggle('active', result.user_vote === 1);
-            downvoteBtn.classList.toggle('active', result.user_vote === -1);
+            if (upvoteBtn && downvoteBtn) {
+                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
+                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
+            }
             
             if (window.Glorp) {
-                Glorp.showNotification('Vote recorded!', 'success');
+                const action = result.user_vote === voteType ? 
+                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
+                Glorp.showNotification(`Comment ${action}!`, 'success');
             }
         } else {
             const result = await response.text();
@@ -440,11 +575,51 @@ async function voteComment(commentId, voteType) {
     }
 }
 
-// Vote thread functionality (placeholder)
+// Vote thread functionality
 async function voteThread(threadId, voteType) {
-    // This would be implemented when you add thread voting
-    if (window.Glorp) {
-        Glorp.showNotification('Thread voting coming soon!', 'info');
+    try {
+        const response = await fetch(`/api/threads/${threadId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vote_type: voteType })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Update the vote display
+            const scoreElement = document.getElementById('thread-score');
+            const upvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:first-child');
+            const downvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:last-child');
+            
+            if (scoreElement && upvoteBtn && downvoteBtn) {
+                // Update score
+                scoreElement.textContent = result.score;
+                scoreElement.dataset.score = result.score;
+                
+                // Update button states
+                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
+                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
+            }
+            
+            if (window.Glorp) {
+                const action = result.user_vote === voteType ? 
+                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
+                Glorp.showNotification(`Post ${action}!`, 'success');
+            }
+        } else {
+            const result = await response.text();
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error voting on thread:', error);
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to vote. Please try again.', 'error');
+        }
     }
 }
 
@@ -565,7 +740,6 @@ async function submitReply(event, parentCommentId) {
         
         if (response.ok) {
             // Reload page to show new reply
-            // In a more advanced implementation, you could dynamically add the reply
             location.reload();
         } else {
             const result = await response.text();
@@ -588,111 +762,29 @@ async function submitReply(event, parentCommentId) {
 function toggleReplies(commentId) {
     const repliesContainer = document.getElementById(`replies-${commentId}`);
     const toggleBtn = document.querySelector(`[onclick="toggleReplies('${commentId}')"]`);
+    
+    if (!repliesContainer || !toggleBtn) return;
+    
     const toggleText = toggleBtn.querySelector('.toggle-text');
     const toggleIcon = toggleBtn.querySelector('i');
-    
-    if (!repliesContainer) return;
-    
     const isExpanded = toggleBtn.dataset.expanded === 'true';
     
     if (isExpanded) {
         // Collapse replies
         repliesContainer.style.display = 'none';
         toggleBtn.dataset.expanded = 'false';
-        toggleText.textContent = 'Show replies';
+        const replyCount = repliesContainer.children.length;
+        toggleText.textContent = `Show ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
         toggleIcon.className = 'fas fa-chevron-down';
     } else {
         // Expand replies
         repliesContainer.style.display = 'block';
         toggleBtn.dataset.expanded = 'true';
-        toggleText.textContent = 'Hide replies';
+        const replyCount = repliesContainer.children.length;
+        toggleText.textContent = `Hide ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
         toggleIcon.className = 'fas fa-chevron-up';
     }
 }
-
-// Enhanced vote thread functionality
-async function voteThread(threadId, voteType) {
-    try {
-        const response = await fetch(`/api/threads/${threadId}/vote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ vote_type: voteType })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            
-            // Update the vote display
-            const scoreElement = document.getElementById('thread-score');
-            const upvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:first-child');
-            const downvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:last-child');
-            
-            if (scoreElement && upvoteBtn && downvoteBtn) {
-                // Update score
-                scoreElement.textContent = result.score;
-                scoreElement.dataset.score = result.score;
-                
-                // Update button states
-                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
-                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
-            }
-            
-            if (window.Glorp) {
-                const action = result.user_vote === voteType ? 
-                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                Glorp.showNotification(`Post ${action}!`, 'success');
-            }
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error voting on thread:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to vote. Please try again.', 'error');
-        }
-    }
-}
-
-// Auto-resize reply textareas
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('input', function(e) {
-        if (e.target.matches('.reply-form textarea')) {
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.max(60, e.target.scrollHeight) + 'px';
-        }
-    });
-});
-
-// Initialize keyboard shortcuts for replies
-document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + Enter to submit reply
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement.matches('.reply-form textarea')) {
-            const form = activeElement.closest('form');
-            if (form) {
-                form.dispatchEvent(new Event('submit'));
-            }
-        }
-    }
-    
-    // Escape to cancel reply
-    if (e.key === 'Escape') {
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement.matches('.reply-form textarea')) {
-            const replyForm = activeElement.closest('.reply-form');
-            if (replyForm) {
-                const commentId = replyForm.id.replace('reply-form-', '');
-                cancelReply(commentId);
-            }
-        }
-    }
-});
 
 // Share functionality
 function shareThread(threadId) {
@@ -761,160 +853,6 @@ document.addEventListener('click', function(e) {
 </script>
 
 <style>
-/* Enhanced Thread Styles with Image Support */
-.post-type-badge {
-    background: #0079d3;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-left: 8px;
-}
-
-.post-type-badge.post-type-image {
-    background: #ff6b35;
-}
-
-.post-type-badge.post-type-link {
-    background: #2ecc71;
-}
-
-/* Image post styles */
-.thread-image-container {
-    margin: 16px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #edeff1;
-}
-
-.thread-image {
-    width: 100%;
-    max-height: 600px;
-    object-fit: contain;
-    display: block;
-    cursor: zoom-in;
-    transition: opacity 0.2s;
-}
-
-.thread-image:hover {
-    opacity: 0.95;
-}
-
-/* Link post styles */
-.thread-link-container {
-    margin: 16px 0;
-}
-
-.link-preview {
-    border: 1px solid #edeff1;
-    border-radius: 8px;
-    padding: 16px;
-    background: #f8f9fa;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s;
-}
-
-.link-preview:hover {
-    background: #f0f0f0;
-    border-color: #0079d3;
-}
-
-.link-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-}
-
-.link-info i {
-    color: #0079d3;
-    font-size: 18px;
-}
-
-.link-domain {
-    color: #1a1a1b;
-    font-weight: 500;
-    word-break: break-all;
-}
-
-.link-button {
-    background: #0079d3;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: background-color 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-}
-
-.link-button:hover {
-    background: #005fa3;
-    color: white;
-}
-
-/* Image modal styles */
-.image-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    cursor: zoom-out;
-}
-
-.image-modal-content {
-    position: relative;
-    max-width: 95vw;
-    max-height: 95vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.image-modal-content img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-.image-modal-close {
-    position: absolute;
-    top: -40px;
-    right: 0;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.image-modal-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Loading spinner for image modal */
-.image-modal img[src=""] {
-    display: none;
-}
-
 /* Enhanced comment styles */
 .comment-item {
     display: flex;
@@ -922,6 +860,14 @@ document.addEventListener('click', function(e) {
     background: white;
     padding: 16px 20px;
     border-bottom: 1px solid #edeff1;
+    position: relative;
+}
+
+.nested-comment {
+    margin-left: 20px;
+    border-left: 2px solid #0079d3;
+    padding-left: 12px;
+    background: #fafafa;
 }
 
 .comment-vote-section {
@@ -952,8 +898,14 @@ document.addEventListener('click', function(e) {
     color: #1a1a1b;
 }
 
-.comment-vote-btn.active {
+.comment-vote-btn.upvoted {
     color: #ff4500;
+    background: rgba(255, 69, 0, 0.1);
+}
+
+.comment-vote-btn.downvoted {
+    color: #7193ff;
+    background: rgba(113, 147, 255, 0.1);
 }
 
 .comment-score {
@@ -962,66 +914,20 @@ document.addEventListener('click', function(e) {
     color: #878a8c;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .thread-image {
-        max-height: 400px;
-    }
-    
-    .link-preview {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
-    
-    .link-info {
-        justify-content: center;
-    }
-    
-    .link-domain {
-        font-size: 14px;
-    }
-    
-    .image-modal-close {
-        top: 10px;
-        right: 10px;
-    }
-    
-    .thread-container {
-        padding: 0 12px;
-    }
+.comment-content-section {
+    flex: 1;
 }
 
-/* Loading spinner */
-.loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid currentColor;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Comment form user info */
-.comment-form-header {
-    margin-bottom: 12px;
-}
-
-.comment-as-user {
+.comment-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    margin-bottom: 8px;
+    font-size: 12px;
     color: #878a8c;
+    flex-wrap: wrap;
 }
 
-/* Comment author info */
 .comment-author-info {
     display: flex;
     align-items: center;
@@ -1038,17 +944,155 @@ document.addEventListener('click', function(e) {
     text-decoration: underline;
 }
 
-/* Inline user info adjustments */
-.inline-user-info {
-    display: inline-flex;
+.comment-reply-indicator {
+    color: #878a8c;
+    font-size: 11px;
+    display: flex;
     align-items: center;
     gap: 4px;
-    vertical-align: middle;
 }
 
-.thread-meta-line .inline-user-info {
-    display: inline-flex;
+.comment-content {
+    margin-bottom: 12px;
+}
+
+.comment-content p {
+    margin: 0;
+    color: #1a1a1b;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    color: #878a8c;
+    cursor: pointer;
+    display: flex;
     align-items: center;
     gap: 4px;
+    padding: 4px 8px;
+    border-radius: 2px;
+    transition: all 0.2s;
+    font-size: 12px;
+    font-weight: 600;
 }
-</style>{{end}}
+
+.comment-action-btn:hover {
+    background: #f6f7f8;
+    color: #1a1a1b;
+}
+
+.comment-action-btn.danger:hover {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.toggle-replies-btn {
+    font-weight: 700;
+}
+
+.reply-form {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #edeff1;
+}
+
+.reply-form-header {
+    margin-bottom: 8px;
+}
+
+.reply-as-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #878a8c;
+}
+
+.reply-form textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.reply-form textarea:focus {
+    outline: none;
+    border-color: #0079d3;
+    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+}
+
+.reply-form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.nested-replies {
+    margin-top: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nested-comment {
+        margin-left: 12px;
+        padding-left: 8px;
+    }
+    
+    .comment-vote-section {
+        flex-direction: row;
+        justify-content: center;
+        min-width: unset;
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .comment-score {
+        margin: 0 8px;
+    }
+}
+
+/* Thread vote section styles */
+.thread-vote-section .vote-arrow.upvoted {
+    color: #ff4500;
+    background: rgba(255, 69, 0, 0.1);
+}
+
+.thread-vote-section .vote-arrow.downvoted {
+    color: #7193ff;
+    background: rgba(113, 147, 255, 0.1);
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{{end}}
