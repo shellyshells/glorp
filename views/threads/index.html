@@ -3,18 +3,25 @@
     <div class="forum-sidebar">
         <div class="sidebar-section">
             <h3><i class="fas fa-home"></i> Home</h3>
-            <div class="tag-list">
-                <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
-                    <i class="fas fa-fire"></i> Popular
-                </a>
-                <a href="/?sort=new" class="tag-item">
-                    <i class="fas fa-clock"></i> New
-                </a>
-                <a href="/?sort=top" class="tag-item">
-                    <i class="fas fa-arrow-up"></i> Top
-                </a>
-            </div>
+        <div class="tag-list">
+        <a href="/?sort=popular" class="tag-item {{if eq .Filters.SortBy "popular"}}active{{end}}">
+            <i class="fas fa-fire"></i> Popular
+        </a>
+        <a href="/?sort=new" class="tag-item {{if eq .Filters.SortBy "new"}}active{{end}}">
+            <i class="fas fa-clock"></i> New
+        </a>
+        <a href="/?sort=top" class="tag-item {{if eq .Filters.SortBy "top"}}active{{end}}">
+            <i class="fas fa-arrow-up"></i> Top
+        </a>
+        <div class="sidebar-limit-options">
+            <div class="limit-title">Show:</div>
+            <a href="?limit=10{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="limit-option {{if eq .Filters.Limit 10}}active{{end}}">10</a>
+            <a href="?limit=20{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="limit-option {{if eq .Filters.Limit 20}}active{{end}}">20</a>
+            <a href="?limit=30{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="limit-option {{if eq .Filters.Limit 30}}active{{end}}">30</a>
+            
         </div>
+    </div>
+</div>
         <div class="sidebar-section">
             <h3><i class="fas fa-users"></i> Communities</h3>
             <div class="tag-list">
@@ -49,27 +56,15 @@
                         <i class="fas fa-users"></i> z/{{.Filters.CommunityName}}
                     {{else if .Filters.Search}}
                         <i class="fas fa-search"></i> Search: "{{.Filters.Search}}"
-                    {{else}}
+                    {{else if eq .Filters.SortBy "new"}}
+                        <i class="fas fa-clock"></i> New Posts
+                    {{else if eq .Filters.SortBy "top"}}
+                        <i class="fas fa-arrow-up"></i> Top Posts
+                    {{else if eq .Filters.SortBy "popular"}}
                         <i class="fas fa-home"></i> Popular Posts
                     {{end}}
                 </h1>
                 <p>{{.Pagination.TotalItems}} posts</p>
-            </div>
-        </div>
-
-        <div class="thread-filters">
-            <div class="filter-group">
-                <select id="sort-select" onchange="updateSort(this.value)">
-                    <option value="hot" {{if eq .Filters.SortBy "hot"}}selected{{end}}>🔥 Hot</option>
-                    <option value="new" {{if eq .Filters.SortBy "new"}}selected{{end}}>🆕 New</option>
-                    <option value="top" {{if eq .Filters.SortBy "top"}}selected{{end}}>⬆️ Top</option>
-                </select>
-                
-                <select id="limit-select" onchange="updateLimit(this.value)">
-                    <option value="10" {{if eq .Pagination.ItemsPerPage 10}}selected{{end}}>10 posts</option>
-                    <option value="25" {{if eq .Pagination.ItemsPerPage 25}}selected{{end}}>25 posts</option>
-                    <option value="50" {{if eq .Pagination.ItemsPerPage 50}}selected{{end}}>50 posts</option>
-                </select>
             </div>
         </div>
 

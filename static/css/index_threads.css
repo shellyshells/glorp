@@ -606,6 +606,40 @@
     line-height: 1;
 }
 
+/* Sidebar limit selector styles */
+.sidebar-limit-options {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.limit-title {
+    color: #878a8c;
+    margin-right: 4px;
+}
+
+.limit-option {
+    color: #878a8c;
+    text-decoration: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.limit-option:hover {
+    background: #f6f7f8;
+    color: #1a1a1b;
+}
+
+.limit-option.active {
+    background: #f0f7ff;
+    color: #0079d3;
+    font-weight: 500;
+}
+
 /* Avatar Color Styles */
 .avatar-default {
     background: linear-gradient(135deg, #667eea, #764ba2);
