@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"glorp/models"
 	"html/template"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -21,9 +21,7 @@ func init() {
 		"eq": func(a, b interface{}) bool {
 			return a == b
 		},
-		"timeAgo": func(t time.Time) string {
-			return timeAgo(t)
-		},
+		"timeAgo": timeAgo,
 		"truncate": func(text string, length int) string {
 			if len(text) <= length {
 				return text
@@ -129,26 +127,21 @@ func timeAgo(t time.Time) string {
 		return "just now"
 	} else if diff < time.Hour {
 		minutes := int(diff.Minutes())
-		return formatDuration(minutes, "minute")
+		return fmt.Sprintf("%dm ago", minutes)
 	} else if diff < 24*time.Hour {
 		hours := int(diff.Hours())
-		return formatDuration(hours, "hour")
-	} else if diff < 30*24*time.Hour {
+		return fmt.Sprintf("%dh ago", hours)
+	} else if diff < 7*24*time.Hour {
 		days := int(diff.Hours() / 24)
-		return formatDuration(days, "day")
+		return fmt.Sprintf("%dd ago", days)
+	} else if diff < 30*24*time.Hour {
+		weeks := int(diff.Hours() / (24 * 7))
+		return fmt.Sprintf("%dw ago", weeks)
 	} else if diff < 365*24*time.Hour {
 		months := int(diff.Hours() / (24 * 30))
-		return formatDuration(months, "month")
+		return fmt.Sprintf("%dmo ago", months)
 	} else {
 		years := int(diff.Hours() / (24 * 365))
-		return formatDuration(years, "year")
+		return fmt.Sprintf("%dy ago", years)
 	}
-}
-
-func formatDuration(count int, unit string) string {
-	if count == 1 {
-		return "1 " + unit + " ago"
-	}
-	// FIX: Convert int to string properly
-	return strconv.Itoa(count) + " " + unit + "s ago"
 }

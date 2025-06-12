@@ -10,6 +10,10 @@
                 <div class="profile-avatar-wrapper">
                     {{if .User.AvatarURL}}
                         <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="profile-avatar-img">
+                    {{else}}
+                        <div class="profile-avatar-default {{getAvatarClass (getAvatarStyle .User)}}">
+                            <span class="avatar-initial">{{getUserInitial .User}}</span>
+                        </div>
                     {{end}}
                     {{if isUserOnline .User}}
                         <div class="online-indicator" title="Online"></div>
@@ -106,158 +110,158 @@
 
     <!-- Profile Content -->
     <div class="profile-content">
-        <div class="profile-main">
-            <div class="profile-tabs">
-                <button class="profile-tab active" data-tab="overview">
-                    <i class="fas fa-home"></i> Overview
-                </button>
-                <button class="profile-tab" data-tab="posts">
-                    <i class="fas fa-newspaper"></i> Posts
-                </button>
-                <button class="profile-tab" data-tab="comments">
-                    <i class="fas fa-comments"></i> Comments
-                </button>
-                {{if eq .CurrentUser.ID .User.ID}}
-                    <button class="profile-tab" data-tab="saved">
-                        <i class="fas fa-bookmark"></i> Saved
-                    </button>
-                {{end}}
-            </div>
-
-            <!-- Overview Tab -->
-            <div class="tab-content active" id="overview-tab">
-                <div class="overview-grid">
-                    <div class="overview-section">
-                        <h3>Recent Posts</h3>
-                        {{if .UserThreads}}
-                            {{range slice .UserThreads 0 3}}
-                            <div class="mini-post-item">
-                                <div class="mini-post-vote">{{.Score}}</div>
-                                <div class="mini-post-content">
-                                    <h4><a href="/threads/{{.ID}}">{{.Title}}</a></h4>
-                                    <div class="mini-post-meta">
-                                        {{range .Tags}}<span class="mini-tag">r/{{.Name}}</span>{{end}}
-                                        <span>{{timeAgo .CreatedAt}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {{end}}
-                            {{if gt (len .UserThreads) 3}}
-                                <a href="#" onclick="switchTab('posts')" class="view-all-link">View all posts →</a>
-                            {{end}}
-                        {{else}}
-                            <div class="empty-section">
-                                <i class="fas fa-newspaper"></i>
-                                <p>No posts yet</p>
-                            </div>
-                        {{end}}
-                    </div>
-
-                    <div class="overview-section">
-                        <h3>Recent Comments</h3>
-                        {{if .UserMessages}}
-                            {{range slice .UserMessages 0 3}}
-                            <div class="mini-comment-item">
-                                <div class="mini-comment-vote">{{.Score}}</div>
-                                <div class="mini-comment-content">
-                                    <p>{{truncate .Content 100}}</p>
-                                    <div class="mini-comment-meta">
-                                        <span>{{timeAgo .CreatedAt}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {{end}}
-                            {{if gt (len .UserMessages) 3}}
-                                <a href="#" onclick="switchTab('comments')" class="view-all-link">View all comments →</a>
-                            {{end}}
-                        {{else}}
-                            <div class="empty-section">
-                                <i class="fas fa-comments"></i>
-                                <p>No comments yet</p>
-                            </div>
-                        {{end}}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Posts Tab -->
-            <div class="tab-content" id="posts-tab" style="display: none;">
-                {{if .UserThreads}}
-                    <div class="profile-posts">
-                        {{range .UserThreads}}
-                        <div class="profile-post-item">
-                            <div class="post-vote-section">
-                                <div class="vote-count">{{.Score}}</div>
-                                <div class="vote-label">points</div>
-                            </div>
-                            <div class="post-content">
-                                <h3><a href="/threads/{{.ID}}">{{.Title}}</a></h3>
-                                <div class="post-meta">
-                                    {{range .Tags}}
-                                        <span class="post-tag">r/{{.Name}}</span>
-                                    {{end}}
-                                    <span class="post-date">{{timeAgo .CreatedAt}}</span>
-                                    <span class="post-comments">{{.MessageCount}} comments</span>
-                                </div>
-                                {{if .Description}}
-                                <p class="post-preview">{{truncate .Description 200}}</p>
-                                {{end}}
-                            </div>
-                        </div>
-                        {{end}}
-                    </div>
-                {{else}}
-                    <div class="empty-tab">
-                        <i class="fas fa-newspaper"></i>
-                        <h3>No posts yet</h3>
-                        <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} posted anything yet.</p>
-                        {{if eq .CurrentUser.ID .User.ID}}
-                            <a href="/threads/create" class="btn btn-primary">Create your first post</a>
-                        {{end}}
-                    </div>
-                {{end}}
-            </div>
-
-            <!-- Comments Tab -->
-            <div class="tab-content" id="comments-tab" style="display: none;">
-                {{if .UserMessages}}
-                    <div class="profile-comments">
-                        {{range .UserMessages}}
-                        <div class="profile-comment-item">
-                            <div class="comment-vote-section">
-                                <div class="vote-count">{{.Score}}</div>
-                                <div class="vote-label">points</div>
-                            </div>
-                            <div class="comment-content">
-                                <p>{{.Content}}</p>
-                                <div class="comment-meta">
-                                    <span class="comment-thread">in <a href="/threads/{{.ThreadID}}">thread</a></span>
-                                    <span class="comment-date">{{timeAgo .CreatedAt}}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {{end}}
-                    </div>
-                {{else}}
-                    <div class="empty-tab">
-                        <i class="fas fa-comments"></i>
-                        <h3>No comments yet</h3>
-                        <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} commented on anything yet.</p>
-                    </div>
-                {{end}}
-            </div>
-
-            <!-- Saved Tab (only for own profile) -->
+        <div class="profile-tabs">
+            <button class="profile-tab active" data-tab="overview">
+                <i class="fas fa-home"></i> Overview
+            </button>
+            <button class="profile-tab" data-tab="posts">
+                <i class="fas fa-newspaper"></i> Posts
+            </button>
+            <button class="profile-tab" data-tab="comments">
+                <i class="fas fa-comments"></i> Comments
+            </button>
             {{if eq .CurrentUser.ID .User.ID}}
-            <div class="tab-content" id="saved-tab" style="display: none;">
-                <div class="empty-tab">
-                    <i class="fas fa-bookmark"></i>
-                    <h3>No saved posts</h3>
-                    <p>Saved posts feature coming soon!</p>
-                </div>
-            </div>
+                <button class="profile-tab" data-tab="saved">
+                    <i class="fas fa-bookmark"></i> Saved
+                </button>
             {{end}}
         </div>
+
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="overview-tab">
+            <div class="overview-grid">
+                <div class="overview-section">
+                    <h3>Recent Posts</h3>
+                    {{if .UserThreads}}
+                        {{$recentThreads := slice .UserThreads 0 3}}
+                        {{range $recentThreads}}
+                        <div class="mini-post-item">
+                            <div class="mini-post-vote">{{.Score}}</div>
+                            <div class="mini-post-content">
+                                <h4><a href="/threads/{{.ID}}">{{.Title}}</a></h4>
+                                <div class="mini-post-meta">
+                                    {{range .Tags}}<span class="mini-tag">r/{{.Name}}</span>{{end}}
+                                    <span>{{timeAgo .CreatedAt}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                        {{if gt (len .UserThreads) 3}}
+                            <a href="#" onclick="switchTab('posts')" class="view-all-link">View all posts →</a>
+                        {{end}}
+                    {{else}}
+                        <div class="empty-section">
+                            <i class="fas fa-newspaper"></i>
+                            <p>No posts yet</p>
+                        </div>
+                    {{end}}
+                </div>
+
+                <div class="overview-section">
+                    <h3>Recent Comments</h3>
+                    {{if .UserMessages}}
+                        {{$recentMessages := slice .UserMessages 0 3}}
+                        {{range $recentMessages}}
+                        <div class="mini-comment-item">
+                            <div class="mini-comment-vote">{{.Score}}</div>
+                            <div class="mini-comment-content">
+                                <p>{{truncate .Content 100}}</p>
+                                <div class="mini-comment-meta">
+                                    <span>{{timeAgo .CreatedAt}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                        {{if gt (len .UserMessages) 3}}
+                            <a href="#" onclick="switchTab('comments')" class="view-all-link">View all comments →</a>
+                        {{end}}
+                    {{else}}
+                        <div class="empty-section">
+                            <i class="fas fa-comments"></i>
+                            <p>No comments yet</p>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Tab -->
+        <div class="tab-content" id="posts-tab" style="display: none;">
+            {{if .UserThreads}}
+                <div class="profile-posts">
+                    {{range .UserThreads}}
+                    <div class="profile-post-item">
+                        <div class="post-vote-section">
+                            <div class="vote-count">{{.Score}}</div>
+                            <div class="vote-label">points</div>
+                        </div>
+                        <div class="post-content">
+                            <h3><a href="/threads/{{.ID}}">{{.Title}}</a></h3>
+                            <div class="post-meta">
+                                {{range .Tags}}
+                                    <span class="post-tag">r/{{.Name}}</span>
+                                {{end}}
+                                <span class="post-date">{{timeAgo .CreatedAt}}</span>
+                                <span class="post-comments">{{.MessageCount}} {{pluralize .MessageCount "comment" "comments"}}</span>
+                            </div>
+                            {{if .Description}}
+                            <p class="post-preview">{{truncate .Description 200}}</p>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <div class="empty-tab">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>No posts yet</h3>
+                    <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} posted anything yet.</p>
+                    {{if eq .CurrentUser.ID .User.ID}}
+                        <a href="/threads/create" class="btn btn-primary">Create your first post</a>
+                    {{end}}
+                </div>
+            {{end}}
+        </div>
+
+        <!-- Comments Tab -->
+        <div class="tab-content" id="comments-tab" style="display: none;">
+            {{if .UserMessages}}
+                <div class="profile-comments">
+                    {{range .UserMessages}}
+                    <div class="profile-comment-item">
+                        <div class="comment-vote-section">
+                            <div class="vote-count">{{.Score}}</div>
+                            <div class="vote-label">points</div>
+                        </div>
+                        <div class="comment-content">
+                            <p>{{.Content}}</p>
+                            <div class="comment-meta">
+                                <span class="comment-thread">in <a href="/threads/{{.ThreadID}}">thread</a></span>
+                                <span class="comment-date">{{timeAgo .CreatedAt}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <div class="empty-tab">
+                    <i class="fas fa-comments"></i>
+                    <h3>No comments yet</h3>
+                    <p>{{if eq .CurrentUser.ID .User.ID}}You haven't{{else}}This user hasn't{{end}} commented on anything yet.</p>
+                </div>
+            {{end}}
+        </div>
+
+        <!-- Saved Tab (only for own profile) -->
+        {{if eq .CurrentUser.ID .User.ID}}
+        <div class="tab-content" id="saved-tab" style="display: none;">
+            <div class="empty-tab">
+                <i class="fas fa-bookmark"></i>
+                <h3>No saved posts</h3>
+                <p>Saved posts feature coming soon!</p>
+            </div>
+        </div>
+        {{end}}
     </div>
 </div>
 
@@ -282,17 +286,17 @@
                 <div class="avatar-option-section">
                     <h4>Choose Avatar Style</h4>
                     <div class="avatar-styles">
-                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient1')">
-                            <div class="avatar-preview gradient1">{{index .User.Username 0 | upper}}</div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('default')">
+                            <div class="avatar-preview avatar-default">{{getUserInitial .User}}</div>
                         </div>
-                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient2')">
-                            <div class="avatar-preview gradient2">{{index .User.Username 0 | upper}}</div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('red')">
+                            <div class="avatar-preview avatar-red">{{getUserInitial .User}}</div>
                         </div>
-                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient3')">
-                            <div class="avatar-preview gradient3">{{index .User.Username 0 | upper}}</div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('blue')">
+                            <div class="avatar-preview avatar-blue">{{getUserInitial .User}}</div>
                         </div>
-                        <div class="avatar-style-option" onclick="selectAvatarStyle('gradient4')">
-                            <div class="avatar-preview gradient4">{{index .User.Username 0 | upper}}</div>
+                        <div class="avatar-style-option" onclick="selectAvatarStyle('green')">
+                            <div class="avatar-preview avatar-green">{{getUserInitial .User}}</div>
                         </div>
                     </div>
                 </div>
