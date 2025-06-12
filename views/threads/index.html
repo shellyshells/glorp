@@ -16,14 +16,16 @@
             </div>
         </div>
         <div class="sidebar-section">
-            <h3><i class="fas fa-tags"></i> Communities</h3>
+            <h3><i class="fas fa-users"></i> Communities</h3>
             <div class="tag-list">
-                <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
+                <a href="/" class="tag-item {{if not .Filters.CommunityName}}active{{end}}">
                     <i class="fas fa-home"></i> All Communities
                 </a>
-                {{range .Tags}}
-                <a href="/?tag={{.Name}}" class="tag-item {{if eq $.Filters.TagName .Name}}active{{end}}">
-                    <i class="fas fa-hashtag"></i> r/{{.Name}}
+                {{range .Communities}}
+                <a href="/r/{{.Name}}" class="tag-item {{if eq $.Filters.CommunityName .Name}}active{{end}}">
+                    <i class="fas fa-users"></i> r/{{.DisplayName}}
+                    {{if eq .Visibility "private"}} 🔒{{end}}
+                    {{if eq .Visibility "restricted"}} ⚠️{{end}}
                 </a>
                 {{end}}
             </div>
@@ -43,8 +45,8 @@
         <div class="forum-header">
             <div class="forum-title">
                 <h1>
-                    {{if .Filters.TagName}}
-                        <i class="fas fa-hashtag"></i> r/{{.Filters.TagName}}
+                    {{if .Filters.CommunityName}}
+                        <i class="fas fa-users"></i> r/{{.Filters.CommunityName}}
                     {{else if .Filters.Search}}
                         <i class="fas fa-search"></i> Search: "{{.Filters.Search}}"
                     {{else}}
@@ -102,8 +104,8 @@
                         
                         <div class="thread-main-content">
                             <div class="thread-meta-line">
-                                {{range .Tags}}
-                                    <a href="/?tag={{.Name}}" class="community-link">r/{{.Name}}</a>
+                                {{if .Community}}
+                                    <a href="/r/{{.Community.Name}}" class="community-link">r/{{.Community.DisplayName}}</a>
                                 {{end}}
                                 <span>•</span>
                                 <span>Posted by 
@@ -135,7 +137,6 @@
                                 {{.Title}}
                             </a>
                             
-                            {{/* Show different content based on post type */}}
                             {{if eq .PostType "image"}}
                                 {{if .ImageURL}}
                                 <div class="thread-image-preview">
@@ -165,7 +166,6 @@
                                 </div>
                                 {{end}}
                             {{else}}
-                                {{/* Text post */}}
                                 {{if .Description}}
                                 <div class="thread-preview">
                                     {{truncate .Description 200}}
@@ -208,8 +208,8 @@
                     <p>
                         {{if .Filters.Search}}
                             No posts match your search criteria.
-                        {{else if .Filters.TagName}}
-                            No posts in r/{{.Filters.TagName}} yet.
+                        {{else if .Filters.CommunityName}}
+                            No posts in r/{{.Filters.CommunityName}} yet.
                         {{else}}
                             No posts have been created yet.
                         {{end}}
@@ -233,7 +233,7 @@
         {{if gt .Pagination.TotalPages 1}}
         <div class="pagination">
             {{if .Pagination.HasPrev}}
-                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
+                <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.CommunityName}}&community={{.Filters.CommunityName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
                     <i class="fas fa-chevron-left"></i> Previous
                 </a>
             {{end}}
@@ -244,7 +244,7 @@
             </span>
             
             {{if .Pagination.HasNext}}
-                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.TagName}}&tag={{.Filters.TagName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
+                <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.CommunityName}}&community={{.Filters.CommunityName}}{{end}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
                     Next <i class="fas fa-chevron-right"></i>
                 </a>
             {{end}}
@@ -355,8 +355,8 @@
                 <div class="crosspost-container">
                     <select id="crosspost-community" class="crosspost-select">
                         <option value="">Select a community...</option>
-                        {{range .Tags}}
-                        <option value="{{.Name}}">r/{{.Name}}</option>
+                        {{range .Communities}}
+                        <option value="{{.Name}}">r/{{.DisplayName}}</option>
                         {{end}}
                     </select>
                     <button onclick="createCrossPost()" class="crosspost-btn">
@@ -390,7 +390,7 @@
     </div>
 </div>
 
-<script src ="/static/js/index_threads.js"></script>
+<script src="/static/js/index_threads.js"></script>
 <link rel="stylesheet" href="/static/css/index_threads.css">
 <link rel="icon" href="/static/images/cat_icon.png" type="image/x-icon">
 {{end}}

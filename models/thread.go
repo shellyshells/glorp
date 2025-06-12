@@ -31,16 +31,17 @@ type Thread struct {
 }
 
 type ThreadFilters struct {
-	TagID       int    `json:"tag_id"`
-	TagName     string `json:"tag_name"`
-	Search      string `json:"search"`
-	Status      string `json:"status"`
-	AuthorID    int    `json:"author_id"`
-	UserID      int    `json:"user_id"`
-	CommunityID int    `json:"community_id"`
-	Page        int    `json:"page"`
-	Limit       int    `json:"limit"`
-	SortBy      string `json:"sort_by"` // date, popularity, hot
+	TagID         int    `json:"tag_id"`
+	TagName       string `json:"tag_name"`
+	Search        string `json:"search"`
+	Status        string `json:"status"`
+	AuthorID      int    `json:"author_id"`
+	UserID        int    `json:"user_id"`
+	CommunityID   int    `json:"community_id"`
+	CommunityName string `json:"community_name"`
+	Page          int    `json:"page"`
+	Limit         int    `json:"limit"`
+	SortBy        string `json:"sort_by"` // date, popularity, hot
 }
 
 func CreateThread(title, description string, authorID int, tagIDs []int) (*Thread, error) {
@@ -94,9 +95,11 @@ func GetThreadByID(id int) (*Thread, error) {
 
 func GetThreadByIDWithUser(id, userID int) (*Thread, error) {
 	thread := &Thread{}
-	query := `SELECT t.id, t.title, t.description, t.author_id, t.status, 
+	query := `SELECT t.id, t.title, t.description, t.author_id, t.community_id, t.status, 
 			         t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 			         t.created_at, t.updated_at, u.username,
+			         COALESCE(c.id, 0) as community_id_val, COALESCE(c.name, '') as community_name, 
+			         COALESCE(c.display_name, '') as community_display_name,
 					 COUNT(DISTINCT m.id) as message_count,
 					 COALESCE(SUM(CASE WHEN tv.vote_type = 1 THEN 1 ELSE 0 END), 0) as upvotes,
 					 COALESCE(SUM(CASE WHEN tv.vote_type = -1 THEN 1 ELSE 0 END), 0) as downvotes,
@@ -105,14 +108,18 @@ func GetThreadByIDWithUser(id, userID int) (*Thread, error) {
 			  LEFT JOIN users u ON t.author_id = u.id 
 			  LEFT JOIN messages m ON t.id = m.thread_id
 			  LEFT JOIN thread_votes tv ON t.id = tv.thread_id
+			  LEFT JOIN communities c ON t.community_id = c.id
 			  WHERE t.id = ?
 			  GROUP BY t.id`
 
 	var authorUsername string
+	var communityID, communityIDVal int
+	var communityName, communityDisplayName string
 	err := config.DB.QueryRow(query, id).Scan(
-		&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
+		&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID, &communityID,
 		&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
 		&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
+		&communityIDVal, &communityName, &communityDisplayName,
 		&thread.MessageCount, &thread.Upvotes, &thread.Downvotes, &thread.Score,
 	)
 
@@ -125,6 +132,16 @@ func GetThreadByIDWithUser(id, userID int) (*Thread, error) {
 		Username: authorUsername,
 	}
 
+	// Set community info if thread belongs to a community
+	if communityIDVal > 0 {
+		thread.CommunityID = &communityIDVal
+		thread.Community = &Community{
+			ID:          communityIDVal,
+			Name:        communityName,
+			DisplayName: communityDisplayName,
+		}
+	}
+
 	// Get user's vote if userID is provided
 	if userID > 0 {
 		var vote int
@@ -135,7 +152,7 @@ func GetThreadByIDWithUser(id, userID int) (*Thread, error) {
 		}
 	}
 
-	// Get tags
+	// Get tags for backward compatibility
 	thread.Tags, _ = GetThreadTags(thread.ID)
 
 	return thread, nil
@@ -154,6 +171,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		LEFT JOIN thread_tags tt ON t.id = tt.thread_id
 		LEFT JOIN tags tag ON tt.tag_id = tag.id
 		LEFT JOIN thread_votes tv ON t.id = tv.thread_id
+		LEFT JOIN communities c ON t.community_id = c.id
 	`
 
 	// Build WHERE conditions
@@ -172,6 +190,12 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 	if filters.CommunityID > 0 {
 		whereConditions = append(whereConditions, "t.community_id = ?")
 		args = append(args, filters.CommunityID)
+		argIndex++
+	}
+
+	if filters.CommunityName != "" {
+		whereConditions = append(whereConditions, "c.name = ?")
+		args = append(args, filters.CommunityName)
 		argIndex++
 	}
 
@@ -210,11 +234,13 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		return nil, 0, err
 	}
 
-	// Main query with voting data
+	// Main query with voting data and community info
 	selectQuery := `
 		SELECT DISTINCT t.id, t.title, t.description, t.author_id, t.status, 
 		       t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
 		       t.created_at, t.updated_at, u.username,
+		       COALESCE(c.id, 0) as community_id, COALESCE(c.name, '') as community_name, 
+		       COALESCE(c.display_name, '') as community_display_name,
 			   COUNT(DISTINCT m.id) as message_count,
 			   COALESCE(SUM(CASE WHEN tv.vote_type = 1 THEN 1 ELSE 0 END), 0) as upvotes,
 			   COALESCE(SUM(CASE WHEN tv.vote_type = -1 THEN 1 ELSE 0 END), 0) as downvotes,
@@ -257,11 +283,14 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 	for rows.Next() {
 		var thread Thread
 		var authorUsername string
+		var communityID int
+		var communityName, communityDisplayName string
 
 		err := rows.Scan(
 			&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID,
 			&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
 			&thread.CreatedAt, &thread.UpdatedAt, &authorUsername,
+			&communityID, &communityName, &communityDisplayName,
 			&thread.MessageCount, &thread.Upvotes, &thread.Downvotes, &thread.Score,
 		)
 		if err != nil {
@@ -271,6 +300,16 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 		thread.Author = &User{
 			ID:       thread.AuthorID,
 			Username: authorUsername,
+		}
+
+		// Set community info if thread belongs to a community
+		if communityID > 0 {
+			thread.CommunityID = &communityID
+			thread.Community = &Community{
+				ID:          communityID,
+				Name:        communityName,
+				DisplayName: communityDisplayName,
+			}
 		}
 
 		// Get user's vote if userID is provided
@@ -283,7 +322,7 @@ func GetThreads(filters ThreadFilters) ([]Thread, int, error) {
 			}
 		}
 
-		// Get tags for each thread
+		// Get tags for backward compatibility
 		thread.Tags, _ = GetThreadTags(thread.ID)
 
 		threads = append(threads, thread)
