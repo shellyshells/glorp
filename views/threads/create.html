@@ -26,7 +26,7 @@
                         <option value="">Select a community</option>
                         {{range .Communities}}
                         <option value="{{.ID}}" {{if and $.RequestedCommunity (eq .Name $.RequestedCommunity)}}selected{{end}}>
-                            r/{{.DisplayName}}
+                            z/{{.DisplayName}}
                             {{if eq .Visibility "private"}} (Private){{end}}
                             {{if eq .Visibility "restricted"}} (Restricted){{end}}
                         </option>

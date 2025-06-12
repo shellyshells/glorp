@@ -44,13 +44,13 @@
     <div class="communities-grid">
         {{if .Communities}}
             {{range .Communities}}
-            <div class="community-card" onclick="window.location.href='/r/{{.Name}}'">
+            <div class="community-card" onclick="window.location.href='/z/{{.Name}}'">
                 <div class="community-header">
                     <div class="community-icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="community-info">
-                        <h3 class="community-name">r/{{.DisplayName}}</h3>
+                        <h3 class="community-name">z/{{.DisplayName}}</h3>
                         <div class="community-meta">
                             <span class="member-count">
                                 <i class="fas fa-user"></i>

@@ -62,7 +62,7 @@
                             {{if .User.AvatarURL}}
                                 <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
                             {{else}}
-                                <span class="avatar-initial">{{getUserInitial .User}}</span>
+                                <div class="avatar-initial">{{getUserInitial .User}}</div>
                             {{end}}
                             {{if isUserOnline .User}}
                                 <div class="online-indicator"></div>

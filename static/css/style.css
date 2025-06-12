@@ -1193,7 +1193,6 @@ body {
     height: 32px;
     background: linear-gradient(135deg, #ff4500, #ff6500);
     color: white;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2435,7 +2434,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
     overflow: hidden;
     color: white;
     font-weight: 700;

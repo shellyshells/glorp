@@ -22,8 +22,8 @@
                     <i class="fas fa-home"></i> All Communities
                 </a>
                 {{range .Communities}}
-                <a href="/r/{{.Name}}" class="tag-item {{if eq $.Filters.CommunityName .Name}}active{{end}}">
-                    <i class="fas fa-users"></i> r/{{.DisplayName}}
+                <a href="/z/{{.Name}}" class="tag-item {{if eq $.Filters.CommunityName .Name}}active{{end}}">
+                    <i class="fas fa-users"></i> z/{{.DisplayName}}
                     {{if eq .Visibility "private"}} 🔒{{end}}
                     {{if eq .Visibility "restricted"}} ⚠️{{end}}
                 </a>
@@ -46,7 +46,7 @@
             <div class="forum-title">
                 <h1>
                     {{if .Filters.CommunityName}}
-                        <i class="fas fa-users"></i> r/{{.Filters.CommunityName}}
+                        <i class="fas fa-users"></i> z/{{.Filters.CommunityName}}
                     {{else if .Filters.Search}}
                         <i class="fas fa-search"></i> Search: "{{.Filters.Search}}"
                     {{else}}
@@ -105,7 +105,7 @@
                         <div class="thread-main-content">
                             <div class="thread-meta-line">
                                 {{if .Community}}
-                                    <a href="/r/{{.Community.Name}}" class="community-link">r/{{.Community.DisplayName}}</a>
+                                    <a href="/z/{{.Community.Name}}" class="community-link">z/{{.Community.DisplayName}}</a>
                                 {{end}}
                                 <span>•</span>
                                 <span>Posted by 
@@ -209,7 +209,7 @@
                         {{if .Filters.Search}}
                             No posts match your search criteria.
                         {{else if .Filters.CommunityName}}
-                            No posts in r/{{.Filters.CommunityName}} yet.
+                            No posts in z/{{.Filters.CommunityName}} yet.
                         {{else}}
                             No posts have been created yet.
                         {{end}}
@@ -356,7 +356,7 @@
                     <select id="crosspost-community" class="crosspost-select">
                         <option value="">Select a community...</option>
                         {{range .Communities}}
-                        <option value="{{.Name}}">r/{{.DisplayName}}</option>
+                        <option value="{{.Name}}">z/{{.DisplayName}}</option>
                         {{end}}
                     </select>
                     <button onclick="createCrossPost()" class="crosspost-btn">

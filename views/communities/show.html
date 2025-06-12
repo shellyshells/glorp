@@ -14,8 +14,8 @@
             
             <div class="community-details">
                 <div class="community-names">
-                    <h1 class="community-display-name">{{.Community.DisplayName}}</h1>
-                    <span class="community-path">r/{{.Community.Name}}</span>
+                    <h1 class="community-display-name">z/{{.Community.DisplayName}}</h1>
+                    <span class="community-path">z/{{.Community.Name}}</span>
                     <div class="community-badges">
                         <span class="visibility-badge visibility-{{.Community.Visibility}}">
                             {{if eq .Community.Visibility "public"}}<i class="fas fa-globe"></i>{{end}}
@@ -85,7 +85,7 @@
                     {{end}}
                     
                     {{if or (eq .Community.UserRole "creator") (eq .Community.UserRole "admin") (eq .Community.UserRole "moderator")}}
-                        <a href="/r/{{.Community.Name}}/manage" class="btn btn-outline">
+                        <a href="/z/{{.Community.Name}}/manage" class="btn btn-outline">
                             <i class="fas fa-cog"></i> Manage
                         </a>
                     {{end}}
@@ -113,7 +113,7 @@
                                 <span class="avatar-initial">{{getUserInitial .User}}</span>
                             {{end}}
                         </div>
-                        <span class="create-post-text">Create a post in r/{{.Community.Name}}</span>
+                        <span class="create-post-text">Create a post in z/{{.Community.Name}}</span>
                         <i class="fas fa-plus"></i>
                     </a>
                 </div>
@@ -249,7 +249,7 @@
                     <div class="empty-posts">
                         <i class="fas fa-newspaper"></i>
                         <h3>No posts yet</h3>
-                        <p>Be the first to post in r/{{.Community.Name}}!</p>
+                        <p>Be the first to post in z/{{.Community.Name}}!</p>
                         {{if .User}}
                             {{if or (eq .Community.UserRole "creator") (eq .Community.UserRole "admin") (eq .Community.UserRole "moderator") (eq .Community.UserRole "member") (eq .Community.Visibility "public")}}
                                 <a href="/threads/create?community={{.Community.Name}}" class="btn btn-primary">
@@ -270,7 +270,7 @@
                 {{if .Community.Description}}
                     <p class="sidebar-description">{{.Community.Description}}</p>
                 {{else}}
-                    <p class="sidebar-description">Welcome to r/{{.Community.Name}}!</p>
+                    <p class="sidebar-description">Welcome to z/{{.Community.Name}}!</p>
                 {{end}}
                 <div class="community-stats">
                     <div class="stat-item">
