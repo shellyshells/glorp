@@ -1,0 +1,196 @@
+.manage-community-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.manage-header {
+    margin-bottom: 30px;
+}
+
+.manage-header h1 {
+    margin: 0 0 10px 0;
+    color: #1a1a1b;
+}
+
+.community-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.manage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.manage-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.manage-section h2 {
+    margin: 0 0 20px 0;
+    color: #1a1a1b;
+    font-size: 18px;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: #1a1a1b;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.moderators-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moderator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f6f7f8;
+    border-radius: 4px;
+}
+
+.moderator-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.moderator-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.moderator-username {
+    color: #1a1a1b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.moderator-username:hover {
+    text-decoration: underline;
+}
+
+.moderator-role {
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.moderator-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.role-select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.pending-requests {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.request-item {
+    padding: 16px;
+    background: #f6f7f8;
+    border-radius: 4px;
+}
+
+.request-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.request-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.request-username {
+    color: #1a1a1b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.request-username:hover {
+    text-decoration: underline;
+}
+
+.request-date {
+    color: #878a8c;
+    font-size: 12px;
+}
+
+.request-message {
+    color: #1a1a1b;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+    .manage-community-container {
+        padding: 12px;
+    }
+    
+    .moderator-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .moderator-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

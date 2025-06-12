@@ -1,0 +1,159 @@
+   :root {
+    /* Base Colors - Dark Green Theme */
+    --primary-color: #4CAF50; /* A shade of green */
+    --primary-dark-color: #388E3C; /* Darker green for hover/active states */
+    --secondary-color: #8BC34A; /* Another shade of green */
+    --accent-color: #CDDC39; /* Light green accent */
+
+    /* Text Colors */
+    --text-color-primary: #E0E0E0; /* Light gray for main text */
+    --text-color-secondary: #B0B0B0; /* Slightly darker gray for secondary text */
+    --text-color-muted: #9E9E9E; /* Muted text color */
+    --text-color-dark: #212121; /* Dark text for elements on light backgrounds */
+
+    /* Background Colors */
+    --background-color-body: #212121; /* Dark background for the body */
+    --background-color-card: #303030; /* Slightly lighter dark for cards/sections */
+    --background-color-navbar: #1A1A1A; /* Very dark for the navbar */
+    --background-color-hover: #424242; /* Darker hover background */
+    --background-color-active: #545454; /* Darker active background */
+    --background-color-faded: #282828; /* Faded dark background */
+
+    /* Border Colors */
+    --border-color-light: #424242; /* Light border in dark theme */
+    --border-color-medium: #616161; /* Medium border */
+    --border-color-dark: #212121; /* Dark border */
+
+    /* Specific element colors from original CSS, adjusted for theme */
+    --nav-logo-color: var(--primary-color);
+    --btn-danger-bg: #D32F2F;
+    --btn-danger-hover-bg: #C62828;
+    --btn-warning-bg: #FBC02D;
+    --btn-warning-hover-bg: #F9A825;
+
+    /* Status badge colors adjusted for dark theme */
+    --status-open-bg: #4CAF50;
+    --status-open-color: #E8F5E9;
+    --status-closed-bg: #F44336;
+    --status-closed-color: #FFEBEE;
+    --status-archived-bg: #2196F3;
+    --status-archived-color: #E3F2FD;
+
+    /* Specific background adjustments for various elements */
+    --comment-level-0-bg: var(--background-color-card);
+    --comment-level-1-bg: #363636;
+    --comment-level-2-bg: #3C3C3C;
+    --comment-level-3-bg: #424242;
+
+    --thread-vote-section-bg: #2C2C2C;
+}
+    .nav-dropdown {
+        position: relative;
+    }
+    
+    .nav-dropdown-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .nav-dropdown-toggle:hover {
+        background: var(--primary-dark-color);
+        transform: translateY(-1px);
+    }
+    
+    .nav-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: var(--background-color-card);
+        border: 1px solid var(--border-color-medium);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        border-radius: 8px;
+        min-width: 200px;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s;
+        margin-top: 8px;
+    }
+    
+    .nav-dropdown-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .nav-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: var(--text-color-primary);
+        text-decoration: none;
+        font-size: 14px;
+        border: none;
+        background: none;
+        width: 100%;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .nav-dropdown-item:hover {
+        background-color: var(--background-color-hover);
+    }
+    
+    .nav-dropdown-item:first-child {
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .nav-dropdown-item:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .nav-link.active {
+        background: rgba(0, 121, 211, 0.1);
+        color: #0079d3;
+        border-radius: 4px;
+    }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .nav-container {
+            flex-direction: column;
+            height: auto;
+            padding: 10px 20px;
+        }
+        
+        .nav-search {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .nav-menu {
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .nav-dropdown-menu {
+            right: 0;
+            left: auto;
+        }
+        
+        .main-content {
+            margin-top: 120px;
+        }
+    }

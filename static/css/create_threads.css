@@ -1,0 +1,238 @@
+/* Enhanced styles for image upload */
+.image-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: #0079d3;
+    background: #f0f8ff;
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.upload-area p {
+    color: #878a8c;
+    margin-bottom: 16px;
+    font-size: 16px;
+}
+
+.upload-area small {
+    color: #999;
+    font-size: 12px;
+    display: block;
+    margin-top: 8px;
+}
+
+.image-preview-section {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.image-preview-container {
+    position: relative;
+}
+
+#image-preview {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    display: block;
+}
+
+.image-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.image-actions .btn {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.link-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #edeff1;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+}
+
+.link-input:focus {
+    outline: none;
+    border-color: #0079d3;
+}
+
+/* Preview modal styles */
+.preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.preview-content {
+    background: white;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.preview-header h3 {
+    margin: 0;
+    color: #1a1a1b;
+}
+
+.preview-header button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #878a8c;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.preview-header button:hover {
+    background: #f6f7f8;
+}
+
+.preview-body {
+    padding: 20px;
+}
+
+.preview-body h2 {
+    margin: 0 0 12px 0;
+    color: #1a1a1b;
+}
+
+.preview-tags {
+    margin-bottom: 12px;
+}
+
+.preview-tags .tag {
+    display: inline-block;
+    background: #f6f7f8;
+    color: #0079d3;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.preview-type {
+    background: #0079d3;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.preview-link {
+    background: #f6f7f8;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    word-break: break-all;
+}
+
+.preview-image {
+    margin-bottom: 12px;
+}
+
+.preview-content-text {
+    color: #1a1a1b;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .upload-area {
+        padding: 30px 15px;
+    }
+    
+    .upload-area i {
+        font-size: 36px;
+    }
+    
+    .image-actions {
+        position: static;
+        justify-content: center;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .preview-content {
+        width: 95%;
+    }
+    
+    .preview-body {
+        padding: 16px;
+    }
+}
