@@ -9,10 +9,10 @@
             <div class="profile-avatar-container">
                 <div class="profile-avatar-wrapper">
                     {{if .User.AvatarURL}}
-                        <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="profile-avatar-img">
+                        <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
                     {{else}}
                         <div class="profile-avatar-default">
-                            <span class="avatar-initial">{{index .User.Username 0 | upper}}</span>
+                            <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="avatar-img">
                         </div>
                     {{end}}
                     {{if isUserOnline .User}}
@@ -918,3 +918,4 @@ document.addEventListener('click', function(e) {
     }
 }
 </style>
+{{end}}
