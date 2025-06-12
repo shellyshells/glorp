@@ -16,15 +16,6 @@
             </div>
         </div>
         <div class="sidebar-section">
-            <h3><i class="fas fa-search"></i> Search</h3>
-            <form action="/search" method="get" class="search-form">
-                <input type="text" name="q" placeholder="Search threads..." class="search-input">
-                <button type="submit" class="search-btn">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
-        </div>
-        <div class="sidebar-section">
             <h3><i class="fas fa-tags"></i> Communities</h3>
             <div class="tag-list">
                 <a href="/" class="tag-item {{if not .Filters.TagName}}active{{end}}">
