@@ -10,10 +10,6 @@
                 <div class="profile-avatar-wrapper">
                     {{if .User.AvatarURL}}
                         <img src="{{.User.AvatarURL}}" alt="{{.User.Username}}" class="profile-avatar-img">
-                    {{else}}
-                        <div class="profile-avatar-default">
-                            <span class="avatar-initial">{{index .User.Username 0 | upper}}</span>
-                        </div>
                     {{end}}
                     {{if isUserOnline .User}}
                         <div class="online-indicator" title="Online"></div>
