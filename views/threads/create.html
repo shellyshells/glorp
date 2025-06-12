@@ -18,6 +18,24 @@
         </div>
 
         <form id="create-post-form" class="create-post-form">
+            <!-- Community Selection -->
+            <div class="form-row">
+                <div class="community-selector">
+                    <label for="community-select">Choose a community *</label>
+                    <select id="community-select" name="community_id" required>
+                        <option value="">Select a community</option>
+                        {{range .Communities}}
+                        <option value="{{.ID}}" {{if and $.RequestedCommunity (eq .Name $.RequestedCommunity)}}selected{{end}}>
+                            r/{{.DisplayName}}
+                            {{if eq .Visibility "private"}} (Private){{end}}
+                            {{if eq .Visibility "restricted"}} (Restricted){{end}}
+                        </option>
+                        {{end}}
+                    </select>
+                    <small class="help-text">Choose where you want to post</small>
+                </div>
+            </div>
+
             <input 
                 type="text" 
                 class="title-input" 
@@ -117,8 +135,7 @@
     </div>
 </div>
 
-
-<script src ="/static/js/create_threads.js"></script>
+<script src="/static/js/create_threads.js"></script>
 <link rel="stylesheet" href="/static/css/create_threads.css">
 <link rel="icon" href="/static/images/cat_icon.png" type="image/x-icon">
 {{end}}

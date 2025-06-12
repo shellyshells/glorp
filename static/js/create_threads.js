@@ -162,12 +162,15 @@ function resetImageUpload() {
 // Preview functionality
 function previewPost() {
     const title = document.querySelector('.title-input').value;
+    const communitySelect = document.getElementById('community-select');
+    const selectedCommunity = communitySelect.options[communitySelect.selectedIndex].text;
     const selectedTags = Array.from(document.querySelectorAll('.tag-option.selected label')).map(label => label.textContent);
     
     let content = '';
     let previewData = {
         title: title || 'Untitled Post',
         type: currentPostType,
+        community: selectedCommunity !== 'Select a community' ? selectedCommunity : 'No community selected',
         tags: selectedTags
     };
     
@@ -189,7 +192,7 @@ function previewPost() {
             break;
     }
     
-    // Simple preview modal (you can enhance this)
+    // Simple preview modal
     const previewModal = document.createElement('div');
     previewModal.className = 'preview-modal';
     previewModal.innerHTML = `
@@ -199,6 +202,7 @@ function previewPost() {
                 <button onclick="this.closest('.preview-modal').remove()">&times;</button>
             </div>
             <div class="preview-body">
+                <div class="preview-community"><strong>Community:</strong> ${previewData.community}</div>
                 <h2>${previewData.title}</h2>
                 <div class="preview-tags">
                     ${previewData.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
@@ -225,6 +229,13 @@ document.getElementById('create-post-form').addEventListener('submit', async fun
     
     const formData = new FormData(this);
     const selectedTags = Array.from(formData.getAll('tags')).map(id => parseInt(id));
+    const communityId = parseInt(formData.get('community_id'));
+    
+    // Validate community selection
+    if (!communityId || communityId <= 0) {
+        showError('Please select a community to post in');
+        return;
+    }
     
     let description = '';
     let imageUrl = '';
@@ -247,6 +258,7 @@ document.getElementById('create-post-form').addEventListener('submit', async fun
     const data = {
         title: formData.get('title'),
         description: description,
+        community_id: communityId,
         tags: selectedTags,
         post_type: currentPostType,
         image_url: imageUrl,

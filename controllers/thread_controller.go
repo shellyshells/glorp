@@ -182,40 +182,47 @@ func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get communities user can post to
-	userCommunityFilters := models.CommunityFilters{
-		UserID: user.ID,
-		SortBy: "name",
-		Limit:  50,
-	}
-	userCommunities, _, _ := models.GetCommunities(userCommunityFilters)
+	// Get all communities the user can post to
+	var availableCommunities []models.Community
 
-	// Also get public communities
-	publicCommunityFilters := models.CommunityFilters{
-		Visibility: "public",
-		SortBy:     "name",
-		Limit:      50,
-	}
-	publicCommunities, _, _ := models.GetCommunities(publicCommunityFilters)
-
-	// Combine and deduplicate communities
-	communityMap := make(map[int]*models.Community)
-	for _, community := range userCommunities {
-		communityMap[community.ID] = &community
-	}
-	for _, community := range publicCommunities {
-		if _, exists := communityMap[community.ID]; !exists {
-			communityMap[community.ID] = &community
+	// Get user's communities (communities they're a member of)
+	if user != nil {
+		userCommunityFilters := models.CommunityFilters{
+			UserID: user.ID,
+			SortBy: "name",
+			Limit:  100,
+		}
+		userCommunities, _, err := models.GetCommunities(userCommunityFilters)
+		if err == nil {
+			availableCommunities = append(availableCommunities, userCommunities...)
 		}
 	}
 
-	// Convert back to slice
-	var availableCommunities []models.Community
-	for _, community := range communityMap {
-		availableCommunities = append(availableCommunities, *community)
+	// Also get public communities that allow open posting
+	publicCommunityFilters := models.CommunityFilters{
+		Visibility: "public",
+		SortBy:     "name",
+		Limit:      100,
+	}
+	publicCommunities, _, err := models.GetCommunities(publicCommunityFilters)
+	if err == nil {
+		// Add public communities that aren't already in the list
+		communityMap := make(map[int]bool)
+		for _, community := range availableCommunities {
+			communityMap[community.ID] = true
+		}
+
+		for _, community := range publicCommunities {
+			if !communityMap[community.ID] {
+				availableCommunities = append(availableCommunities, community)
+			}
+		}
 	}
 
-	// Check if specific community was requested
+	// Get all tags for backward compatibility
+	tags, _ := models.GetAllTags()
+
+	// Check if specific community was requested via URL parameter
 	requestedCommunity := r.URL.Query().Get("community")
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/create.html"))
@@ -223,6 +230,7 @@ func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 		"Title":              "Create Thread - Glorp",
 		"Page":               "create-thread",
 		"Communities":        availableCommunities,
+		"Tags":               tags,
 		"RequestedCommunity": requestedCommunity,
 		"User":               user,
 	}
