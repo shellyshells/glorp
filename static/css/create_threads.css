@@ -1,3 +1,166 @@
+/* Create post container styles */
+.create-post-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 16px;
+}
+
+.create-post-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.create-post-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.create-post-header h2 {
+    margin: 0;
+    color: #1a1a1b;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.create-post-form {
+    padding: 20px;
+}
+
+.title-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #edeff1;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+}
+
+.title-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.content-area {
+    margin-bottom: 16px;
+}
+
+.content-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #edeff1;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color 0.2s;
+}
+
+.content-textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.post-type-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.post-type-tab {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    color: #878a8c;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.post-type-tab:hover {
+    background: #f6f7f8;
+}
+
+.post-type-tab.active {
+    background: #4CAF50;
+    color: white;
+}
+
+.post-type-tab i {
+    margin-right: 8px;
+}
+
+.post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.post-actions-left {
+    display: flex;
+    gap: 8px;
+}
+
+.post-actions-right {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: 1px solid #edeff1;
+    background: white;
+    color: #1a1a1b;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #f6f7f8;
+}
+
+.post-submit-btn {
+    padding: 8px 16px;
+    border: none;
+    background: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.post-submit-btn:hover {
+    background: #45a049;
+}
+
+.error-message {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.success-message {
+    color: #28a745;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
 /* Enhanced styles for image upload */
 .image-upload-section {
     display: flex;

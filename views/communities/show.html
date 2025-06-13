@@ -437,6 +437,7 @@
         </div>
         
         <div class="share-modal-body">
+            <!-- Link Sharing Section -->
             <div class="share-section">
                 <h4><i class="fas fa-link"></i> Share Link</h4>
                 <div class="share-link-container">
@@ -446,6 +447,49 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Social Media Sharing -->
+            <div class="share-section">
+                <h4><i class="fas fa-share-nodes"></i> Share on Social Media</h4>
+                <div class="social-share-grid">
+                    <button class="social-share-btn reddit" onclick="shareToReddit()">
+                        <i class="fab fa-reddit-alien"></i>
+                        <span>Reddit</span>
+                    </button>
+                    <button class="social-share-btn twitter" onclick="shareToTwitter()">
+                        <i class="fab fa-twitter"></i>
+                        <span>Twitter</span>
+                    </button>
+                    <button class="social-share-btn telegram" onclick="shareToTelegram()">
+                        <i class="fab fa-telegram"></i>
+                        <span>Telegram</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Cross-post Section -->
+            {{if .User}}
+            <div class="share-section">
+                <h4><i class="fas fa-arrows-alt"></i> Cross-post to Community</h4>
+                <div class="crosspost-container">
+                    <select id="crosspost-community" class="crosspost-select">
+                        <option value="">Select a community...</option>
+                        {{range .Communities}}
+                        <option value="{{.Name}}">z/{{.DisplayName}}</option>
+                        {{end}}
+                    </select>
+                    <button onclick="createCrossPost()" class="crosspost-btn">
+                        <i class="fas fa-plus"></i>
+                        Cross-post
+                    </button>
+                </div>
+                <small class="crosspost-note">
+                    <i class="fas fa-info-circle"></i>
+                    Cross-posting will create a new post in the selected community that links back to this original post
+                </small>
+            </div>
+            {{end}}
+            
         </div>
     </div>
 </div>
