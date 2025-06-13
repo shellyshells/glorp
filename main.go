@@ -29,7 +29,7 @@ func main() {
 
 	// Community routes (with optional auth)
 	homeRoutes.HandleFunc("/communities", controllers.CommunityListHandler).Methods("GET")
-	homeRoutes.HandleFunc("/r/{name}", controllers.CommunityViewHandler).Methods("GET")
+	homeRoutes.HandleFunc("/z/{name}", controllers.CommunityViewHandler).Methods("GET")
 
 	// Public auth routes (no middleware)
 	r.HandleFunc("/register", controllers.RegisterViewHandler).Methods("GET")
@@ -45,7 +45,7 @@ func main() {
 
 	// Protected community routes
 	protected.HandleFunc("/communities/create", controllers.CreateCommunityViewHandler).Methods("GET")
-	protected.HandleFunc("/r/{name}/manage", controllers.CommunityManageHandler).Methods("GET")
+	protected.HandleFunc("/z/{name}/manage", controllers.CommunityManageHandler).Methods("GET")
 
 	// User profile routes - these need to be accessible to view other users' profiles
 	userRoutes := r.PathPrefix("/user").Subrouter()

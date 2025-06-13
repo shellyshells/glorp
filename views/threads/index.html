@@ -40,6 +40,29 @@
 
         {{if .User}}
         <div class="sidebar-section">
+            <h3><i class="fas fa-user-check"></i> My Communities</h3>
+            <div class="tag-list">
+                {{if .UserCommunities}}
+                    {{range .UserCommunities}}
+                    <a href="/z/{{.Name}}" class="tag-item {{if eq $.Filters.CommunityName .Name}}active{{end}}">
+                        <i class="fas fa-users"></i> z/{{.DisplayName}}
+                        {{if eq .Visibility "private"}} 🔒{{end}}
+                        {{if eq .Visibility "restricted"}} ⚠️{{end}}
+                        {{if eq .UserRole "creator"}} 👑{{end}}
+                        {{if eq .UserRole "admin"}} ⭐{{end}}
+                        {{if eq .UserRole "moderator"}} 🔨{{end}}
+                    </a>
+                    {{end}}
+                {{else}}
+                    <div class="empty-state">
+                        <p>You haven't joined any communities yet.</p>
+                        <a href="/communities" class="btn btn-outline btn-sm">Discover Communities</a>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="sidebar-section">
             <h3><i class="fas fa-plus"></i> Create</h3>
             <a href="/threads/create" class="btn btn-primary btn-full">
                 <i class="fas fa-plus"></i> Create Post

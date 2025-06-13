@@ -89,7 +89,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	// Determine page title
 	pageTitle := "Glorp - Home"
 	if selectedCommunity != nil {
-		pageTitle = "r/" + selectedCommunity.DisplayName + " - Glorp"
+		pageTitle = "z/" + selectedCommunity.DisplayName + " - Glorp"
 	}
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/threads/index.html"))

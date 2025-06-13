@@ -107,7 +107,7 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/show.html"))
 	data := map[string]interface{}{
-		"Title":           "r/" + community.DisplayName + " - Glorp",
+		"Title":           "z/" + community.DisplayName + " - Glorp",
 		"Page":            "community",
 		"Community":       community,
 		"Threads":         threads,
@@ -171,7 +171,7 @@ func CommunityManageHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/manage.html"))
 	data := map[string]interface{}{
-		"Title":           "Manage r/" + community.DisplayName + " - Glorp",
+		"Title":           "Manage z/" + community.DisplayName + " - Glorp",
 		"Page":            "community-manage",
 		"Community":       community,
 		"Moderators":      moderators,

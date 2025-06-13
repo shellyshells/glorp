@@ -140,7 +140,7 @@
                             <div class="mini-post-content">
                                 <h4><a href="/threads/{{.ID}}">{{.Title}}</a></h4>
                                 <div class="mini-post-meta">
-                                    {{range .Tags}}<span class="mini-tag">r/{{.Name}}</span>{{end}}
+                                    {{range .Tags}}<span class="mini-tag">z/{{.Name}}</span>{{end}}
                                     <span>{{timeAgo .CreatedAt}}</span>
                                 </div>
                             </div>
@@ -199,7 +199,7 @@
                             <h3><a href="/threads/{{.ID}}">{{.Title}}</a></h3>
                             <div class="post-meta">
                                 {{range .Tags}}
-                                    <span class="post-tag">r/{{.Name}}</span>
+                                    <span class="post-tag">z/{{.Name}}</span>
                                 {{end}}
                                 <span class="post-date">{{timeAgo .CreatedAt}}</span>
                                 <span class="post-comments">{{.MessageCount}} {{pluralize .MessageCount "comment" "comments"}}</span>

@@ -460,7 +460,7 @@ async function createCrossPost() {
     const crossPostUrl = `/threads/create?crosspost=${currentShareThreadId}&community=${community}`;
     
     if (window.Glorp) {
-        Glorp.showNotification(`Cross-posting to r/${community}...`, 'info');
+        Glorp.showNotification(`Cross-posting to z/${community}...`, 'info');
     }
     
     // Close modal and redirect

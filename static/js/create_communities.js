@@ -73,7 +73,7 @@ document.getElementById('create-community-form').addEventListener('submit', asyn
             const result = await response.json();
             showFormMessage('Community created successfully! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = `/r/${result.community.name}`;
+                window.location.href = `/z/${result.community.name}`;
             }, 1500);
         } else {
             const result = await response.text();
