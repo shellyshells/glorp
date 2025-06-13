@@ -60,7 +60,7 @@
 }
 
 .settings-nav-item.active {
-    background: #0079d3;
+    background: #4CAF50;
     color: white;
 }
 
@@ -120,8 +120,8 @@
 .settings-form input:focus,
 .settings-form textarea:focus {
     outline: none;
-    border-color: #0079d3;
-    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
 .settings-form input[readonly] {

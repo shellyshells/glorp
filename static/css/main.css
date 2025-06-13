@@ -1,4 +1,4 @@
-   :root {
+:root {
     /* Base Colors - Dark Green Theme */
     --primary-color: #4CAF50; /* A shade of green */
     --primary-dark-color: #388E3C; /* Darker green for hover/active states */
@@ -123,8 +123,8 @@
     }
     
     .nav-link.active {
-        background: rgba(0, 121, 211, 0.1);
-        color: #0079d3;
+        background: rgba(76, 175, 80, 0.1);
+        color: #4CAF50;
         border-radius: 4px;
     }
     

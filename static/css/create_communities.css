@@ -96,8 +96,8 @@
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #0079d3;
-    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
 .help-text {
@@ -133,7 +133,7 @@
 }
 
 .radio-option:hover {
-    border-color: #0079d3;
+    border-color: #4CAF50;
 }
 
 .radio-option input[type="radio"] {
@@ -141,8 +141,8 @@
 }
 
 .radio-option input[type="radio"]:checked + label {
-    border-color: #0079d3;
-    background: #f6f9ff;
+    border-color: #4CAF50;
+    background: #E8F5E9;
 }
 
 .radio-option label {
@@ -161,7 +161,7 @@
 }
 
 .radio-header i {
-    color: #0079d3;
+    color: #4CAF50;
     font-size: 18px;
     width: 20px;
 }

@@ -121,19 +121,16 @@
             {{end}}
 
             <!-- Posts Filter -->
-            <div class="posts-filter">
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-sort="hot">
-                        <i class="fas fa-fire"></i> Hot
-                    </button>
-                    <button class="filter-tab" data-sort="new">
-                        <i class="fas fa-clock"></i> New
-                    </button>
-                    <button class="filter-tab" data-sort="top">
-                        <i class="fas fa-arrow-up"></i> Top
-                    </button>
-                </div>
-            </div>
+                    <div class="tag-list"> <a href="?sort=popular" class="tag-item {{if eq .Filters.SortBy "popular"}}active{{end}}">
+                <i class="fas fa-fire"></i> Popular
+            </a>
+            <a href="?sort=new" class="tag-item {{if eq .Filters.SortBy "new"}}active{{end}}">
+                <i class="fas fa-clock"></i> New
+            </a>
+            <a href="?sort=top" class="tag-item {{if eq .Filters.SortBy "top"}}active{{end}}">
+                <i class="fas fa-arrow-up"></i> Top
+            </a>
+        </div>
 
             <!-- Community Posts -->
             <div class="community-posts">

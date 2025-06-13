@@ -17,8 +17,8 @@
 
 .upload-area:hover,
 .upload-area.drag-over {
-    border-color: #0079d3;
-    background: #f0f8ff;
+    border-color: #4CAF50;
+    background: #f0fff0;
 }
 
 .upload-area i {
@@ -84,7 +84,7 @@
 
 .link-input:focus {
     outline: none;
-    border-color: #0079d3;
+    border-color: #4CAF50;
 }
 
 /* Preview modal styles */
@@ -158,7 +158,7 @@
 .preview-tags .tag {
     display: inline-block;
     background: #f6f7f8;
-    color: #0079d3;
+    color: #4CAF50;
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 12px;
@@ -167,7 +167,7 @@
 }
 
 .preview-type {
-    background: #0079d3;
+    background: #4CAF50;
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
@@ -262,8 +262,8 @@
 
 .community-selector select:focus {
     outline: none;
-    border-color: #0079d3;
-    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
 .help-text {
@@ -280,7 +280,7 @@
     background: #f6f7f8;
     border-radius: 4px;
     font-size: 14px;
-    color: #0079d3;
+    color: #4CAF50;
 }
 
 /* Form row for community selection */
