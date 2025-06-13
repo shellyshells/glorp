@@ -360,6 +360,13 @@
                                             <i class="fas fa-share"></i> Share
                                         </button>
                                         
+                                        {{if and (.Replies) (gt (len .Replies) 0)}}
+                                            <button class="comment-action-btn toggle-replies-btn" onclick="toggleReplies('{{.ID}}')" data-expanded="true">
+                                                <i class="fas fa-chevron-up"></i>
+                                                <span class="toggle-text">Hide {{len .Replies}} {{if eq (len .Replies) 1}}reply{{else}}replies{{end}}</span>
+                                            </button>
+                                        {{end}}
+                                        
                                         {{if $.User}}
                                             {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
                                             <button class="comment-action-btn danger" onclick="deleteComment('{{.ID}}')">
@@ -391,6 +398,109 @@
                                                 <button type="submit" class="btn btn-primary btn-sm">Reply</button>
                                             </div>
                                         </form>
+                                    </div>
+                                    {{end}}
+                                    
+                                    <!-- Nested replies for this reply -->
+                                    {{if .Replies}}
+                                    <div class="nested-replies" id="replies-{{.ID}}">
+                                        {{range .Replies}}
+                                        <div class="comment-item nested-comment" data-comment-id="{{.ID}}" data-level="{{.Level}}">
+                                            <!-- Same structure as above, but with increased indentation -->
+                                            <div class="comment-vote-section">
+                                                {{if $.User}}
+                                                    <button class="comment-vote-btn {{if eq .UserVote 1}}upvoted{{end}}" onclick="voteComment('{{.ID}}', 1)">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </button>
+                                                {{else}}
+                                                    <a href="/login" class="comment-vote-btn" title="Login to vote">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </a>
+                                                {{end}}
+                                                
+                                                <span class="comment-score">{{.Score}}</span>
+                                                
+                                                {{if $.User}}
+                                                    <button class="comment-vote-btn {{if eq .UserVote -1}}downvoted{{end}}" onclick="voteComment('{{.ID}}', -1)">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </button>
+                                                {{else}}
+                                                    <a href="/login" class="comment-vote-btn" title="Login to vote">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </a>
+                                                {{end}}
+                                            </div>
+                                            
+                                            <div class="comment-content-section">
+                                                <div class="comment-header">
+                                                    <div class="comment-author-info">
+                                                        <div class="user-avatar-small {{getAvatarClass (getAvatarStyle .Author)}}">
+                                                            {{if .Author.AvatarURL}}
+                                                                <img src="{{.Author.AvatarURL}}" alt="{{.Author.Username}}" class="avatar-img">
+                                                            {{else}}
+                                                                <span class="avatar-initial">{{getUserInitial .Author}}</span>
+                                                            {{end}}
+                                                            {{if isUserOnline .Author}}
+                                                                <div class="online-indicator"></div>
+                                                            {{end}}
+                                                        </div>
+                                                        <a href="/user/{{.Author.Username}}" class="comment-author">u/{{.Author.Username}}</a>
+                                                    </div>
+                                                    <span class="comment-score-inline">{{.Score}} points</span>
+                                                    <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
+                                                </div>
+                                                
+                                                <div class="comment-content">
+                                                    <p>{{.Content}}</p>
+                                                </div>
+                                                
+                                                <div class="comment-actions">
+                                                    {{if $.User}}
+                                                        <button class="comment-action-btn" onclick="toggleReplyForm('{{.ID}}')">
+                                                            <i class="fas fa-reply"></i> Reply
+                                                        </button>
+                                                    {{end}}
+                                                    
+                                                    <button class="comment-action-btn" onclick="shareComment('{{.ID}}')">
+                                                        <i class="fas fa-share"></i> Share
+                                                    </button>
+                                                    
+                                                    {{if $.User}}
+                                                        {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
+                                                        <button class="comment-action-btn danger" onclick="deleteComment('{{.ID}}')">
+                                                            <i class="fas fa-trash"></i> Delete
+                                                        </button>
+                                                        {{end}}
+                                                    {{end}}
+                                                </div>
+                                                
+                                                <!-- Reply form for deepest level -->
+                                                {{if $.User}}
+                                                <div class="reply-form" id="reply-form-{{.ID}}" style="display: none;">
+                                                    <div class="reply-form-header">
+                                                        <div class="reply-as-user">
+                                                            <div class="user-avatar-small {{getAvatarClass (getAvatarStyle $.User)}}">
+                                                                {{if $.User.AvatarURL}}
+                                                                    <img src="{{$.User.AvatarURL}}" alt="{{$.User.Username}}" class="avatar-img">
+                                                                {{else}}
+                                                                    <span class="avatar-initial">{{getUserInitial $.User}}</span>
+                                                                {{end}}
+                                                            </div>
+                                                            <span>Reply as <strong>u/{{$.User.Username}}</strong></span>
+                                                        </div>
+                                                    </div>
+                                                    <form onsubmit="submitReply(event, '{{.ID}}')">
+                                                        <textarea placeholder="What are your thoughts?" required></textarea>
+                                                        <div class="reply-form-actions">
+                                                            <button type="button" onclick="cancelReply('{{.ID}}')" class="btn btn-outline btn-sm">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                        {{end}}
                                     </div>
                                     {{end}}
                                 </div>
@@ -870,6 +980,16 @@ document.addEventListener('click', function(e) {
     background: #fafafa;
 }
 
+.nested-comment .nested-comment {
+    margin-left: 16px;
+    background: #f5f5f5;
+}
+
+.nested-comment .nested-comment .nested-comment {
+    margin-left: 12px;
+    background: #f0f0f0;
+}
+
 .comment-vote-section {
     display: flex;
     flex-direction: column;
@@ -1046,6 +1166,14 @@ document.addEventListener('click', function(e) {
 
 .nested-replies {
     margin-top: 8px;
+}
+
+.nested-replies .nested-replies {
+    margin-top: 4px;
+}
+
+.nested-replies .nested-replies .nested-replies {
+    margin-top: 2px;
 }
 
 /* Responsive design */
