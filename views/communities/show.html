@@ -202,6 +202,11 @@
                                         <img src="{{.ImageURL}}" alt="{{.Title}}" class="preview-image" onclick="openImageModal(this.src)" loading="lazy">
                                     </div>
                                     {{end}}
+                                    {{if .Description}}
+                                    <div class="thread-preview">
+                                        {{truncate .Description 150}}
+                                    </div>
+                                    {{end}}
                                 {{else if eq .PostType "link"}}
                                     {{if .LinkURL}}
                                     <div class="thread-link-preview">
@@ -214,12 +219,17 @@
                                         </div>
                                     </div>
                                     {{end}}
-                                {{end}}
-                                
-                                {{if .Description}}
-                                <div class="thread-preview">
-                                    {{truncate .Description 200}}
-                                </div>
+                                    {{if .Description}}
+                                    <div class="thread-preview">
+                                        {{truncate .Description 200}}
+                                    </div>
+                                    {{end}}
+                                {{else}}
+                                    {{if .Description}}
+                                    <div class="thread-preview">
+                                        {{truncate .Description 200}}
+                                    </div>
+                                    {{end}}
                                 {{end}}
                                 
                                 <div class="thread-footer">
@@ -231,6 +241,11 @@
                                     <div class="thread-action" onclick="shareThread('{{.ID}}')">
                                         <i class="fas fa-share"></i>
                                         <span>Share</span>
+                                    </div>
+                                    
+                                    <div class="thread-action" onclick="saveThread('{{.ID}}')">
+                                        <i class="fas fa-bookmark"></i>
+                                        <span>Save</span>
                                     </div>
                                     
                                     {{if $.User}}
@@ -371,4 +386,70 @@
 <script src ="/static/js/show_communities.js"></script>
 <link rel="stylesheet" href="/static/css/show_communities.css">
 <link rel="icon" href="/static/images/cat_icon.png" type="image/x-icon">
+
+<!-- Advanced Image Modal with Zoom -->
+<div id="image-modal" class="image-modal" style="display: none;">
+    <div class="image-modal-overlay" onclick="closeImageModal()"></div>
+    <div class="image-modal-container">
+        <div class="image-modal-header">
+            <div class="image-modal-title">Image Viewer</div>
+            <div class="image-modal-controls">
+                <button class="modal-control-btn" onclick="resetZoom()" title="Reset Zoom">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </button>
+                <button class="modal-control-btn" onclick="downloadImage()" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="modal-control-btn" onclick="closeImageModal()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="image-modal-content" id="image-container">
+            <img id="modal-image" src="" alt="" draggable="false">
+            <div class="zoom-indicator" id="zoom-indicator">100%</div>
+        </div>
+        <div class="image-modal-footer">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="zoom-level" id="zoom-level">100%</span>
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="modal-instructions">
+                <span><i class="fas fa-mouse-pointer"></i> Drag to pan</span>
+                <span><i class="fas fa-mouse"></i> Scroll to zoom</span>
+                <span><kbd>Esc</kbd> to close</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Share Modal -->
+<div id="share-modal" class="share-modal" style="display: none;">
+    <div class="share-modal-overlay" onclick="closeModal('share-modal')"></div>
+    <div class="share-modal-content">
+        <div class="share-modal-header">
+            <h3><i class="fas fa-share-alt"></i> Share Post</h3>
+            <button class="share-modal-close" onclick="closeModal('share-modal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="share-modal-body">
+            <div class="share-section">
+                <h4><i class="fas fa-link"></i> Share Link</h4>
+                <div class="share-link-container">
+                    <input type="text" id="share-link-input" readonly placeholder="Loading...">
+                    <button onclick="copyShareLink()" class="copy-btn" title="Copy Link">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {{end}} 

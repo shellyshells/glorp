@@ -1094,5 +1094,31 @@ document.addEventListener('click', function(e) {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.thread-image-container {
+    margin: 16px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #edeff1;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 400px; /* Slightly larger for individual thread view */
+}
+
+.thread-image {
+    max-width: 100%;
+    max-height: 400px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    cursor: zoom-in;
+    transition: all 0.2s ease;
+}
+
+.thread-image:hover {
+    transform: scale(1.02);
+}
 </style>
 {{end}}
