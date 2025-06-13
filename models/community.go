@@ -63,12 +63,13 @@ type CommunityRule struct {
 }
 
 type CommunityFilters struct {
-	Search     string `json:"search"`
-	Visibility string `json:"visibility"`
-	UserID     int    `json:"user_id"` // To get user's communities
-	Page       int    `json:"page"`
-	Limit      int    `json:"limit"`
-	SortBy     string `json:"sort_by"` // members, created, name
+	Search     string
+	Visibility string
+	SortBy     string
+	Filter     string
+	UserID     int
+	Page       int
+	Limit      int
 }
 
 // Community CRUD operations
@@ -236,13 +237,20 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 		args = append(args, filters.Visibility)
 	}
 
-	if filters.UserID > 0 {
-		// Get communities user is member of
-		whereConditions = append(whereConditions, `c.id IN (
-			SELECT community_id FROM community_memberships 
-			WHERE user_id = ? AND status = 'active'
-		)`)
-		args = append(args, filters.UserID)
+	// Handle filter type
+	switch filters.Filter {
+	case "joined":
+		if filters.UserID > 0 {
+			whereConditions = append(whereConditions, `c.id IN (
+				SELECT community_id FROM community_memberships 
+				WHERE user_id = ? AND status = 'active'
+			)`)
+			args = append(args, filters.UserID)
+		}
+	case "popular":
+		// No additional WHERE conditions needed, will be handled by ORDER BY
+	case "recent":
+		// No additional WHERE conditions needed, will be handled by ORDER BY
 	}
 
 	whereClause := ""
@@ -264,16 +272,24 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 		       c.join_approval, c.member_count, c.created_at, c.updated_at, u.username
 	` + baseQuery + whereClause
 
-	// Add sorting
-	switch filters.SortBy {
-	case "members":
+	// Add sorting based on filter type
+	switch filters.Filter {
+	case "popular":
 		selectQuery += " ORDER BY c.member_count DESC"
-	case "created":
+	case "recent":
 		selectQuery += " ORDER BY c.created_at DESC"
-	case "name":
-		selectQuery += " ORDER BY c.display_name ASC"
 	default:
-		selectQuery += " ORDER BY c.member_count DESC, c.created_at DESC"
+		// Use the regular sort options
+		switch filters.SortBy {
+		case "members":
+			selectQuery += " ORDER BY c.member_count DESC"
+		case "created":
+			selectQuery += " ORDER BY c.created_at DESC"
+		case "name":
+			selectQuery += " ORDER BY c.display_name ASC"
+		default:
+			selectQuery += " ORDER BY c.member_count DESC, c.created_at DESC"
+		}
 	}
 
 	// Add pagination

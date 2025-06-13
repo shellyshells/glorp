@@ -1,15 +1,40 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"glorp/config"
 	"glorp/controllers"
 	"glorp/middleware"
+	"glorp/utils"
 
 	"github.com/gorilla/mux"
 )
+
+// Error handling middleware
+func errorHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("Panic recovered: %v", err)
+				utils.ShowErrorPage(w, r, http.StatusInternalServerError,
+					"Something went wrong. Please try again later.",
+					fmt.Sprintf("%v", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// 404 handler
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	utils.ShowErrorPage(w, r, http.StatusNotFound,
+		"The page you're looking for doesn't exist or has been moved.",
+		"")
+}
 
 func main() {
 	// Initialize database
@@ -107,6 +132,12 @@ func main() {
 	apiAdmin.Use(middleware.AuthMiddleware, middleware.AdminMiddleware)
 	apiAdmin.HandleFunc("/ban/{id:[0-9]+}", controllers.BanUserHandler).Methods("POST")
 	apiAdmin.HandleFunc("/threads/{id:[0-9]+}/status", controllers.UpdateThreadStatusHandler).Methods("PUT")
+
+	// Add error handling middleware
+	r.Use(errorHandler)
+
+	// Set up 404 handler
+	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	log.Println("🚀 Glorp server starting on :8080")
 	log.Println("📱 Visit http://localhost:8080 to access the forum")

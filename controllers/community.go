@@ -21,6 +21,7 @@ func CommunityListHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	visibility := r.URL.Query().Get("visibility")
 	sortBy := r.URL.Query().Get("sort")
+	filter := r.URL.Query().Get("filter")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 
@@ -31,14 +32,21 @@ func CommunityListHandler(w http.ResponseWriter, r *http.Request) {
 		Search:     search,
 		Visibility: visibility,
 		SortBy:     sortBy,
+		Filter:     filter,
 		Page:       page,
 		Limit:      limit,
 	}
 
 	user := middleware.GetUserFromContext(r)
+	if user != nil {
+		filters.UserID = user.ID
+	}
+
 	communities, total, err := models.GetCommunities(filters)
 	if err != nil {
-		http.Error(w, "Failed to load communities", http.StatusInternalServerError)
+		utils.ShowErrorPage(w, r, http.StatusInternalServerError,
+			"Failed to load communities. Please try again later.",
+			err.Error())
 		return
 	}
 
@@ -55,7 +63,9 @@ func CommunityListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		utils.ShowErrorPage(w, r, http.StatusInternalServerError,
+			"Failed to load the page. Please try again later.",
+			err.Error())
 	}
 }
 
@@ -72,13 +82,17 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	community, err := models.GetCommunityByName(communityName, userID)
 	if err != nil {
-		http.Error(w, "Community not found", http.StatusNotFound)
+		utils.ShowErrorPage(w, r, http.StatusNotFound,
+			"The community you're looking for doesn't exist or has been removed.",
+			err.Error())
 		return
 	}
 
 	// Check if user can view this community
 	if community.Visibility == "private" && community.UserRole == "" {
-		http.Error(w, "This community is private", http.StatusForbidden)
+		utils.ShowErrorPage(w, r, http.StatusForbidden,
+			"This community is private. You need to be a member to view it.",
+			"")
 		return
 	}
 
@@ -92,17 +106,25 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	threads, totalThreads, err := models.GetThreadsByCommunity(threadFilters)
 	if err != nil {
-		http.Error(w, "Failed to load threads", http.StatusInternalServerError)
+		utils.ShowErrorPage(w, r, http.StatusInternalServerError,
+			"Failed to load community threads. Please try again later.",
+			err.Error())
 		return
 	}
 
 	// Get community moderators
-	moderators, _ := models.GetCommunityModerators(community.ID)
+	moderators, err := models.GetCommunityModerators(community.ID)
+	if err != nil {
+		log.Printf("Error getting moderators: %v", err)
+	}
 
 	// Get pending join requests if user can manage community
 	var pendingRequests []models.CommunityJoinRequest
 	if models.CanManageCommunity(community.ID, userID) {
-		pendingRequests, _ = models.GetPendingJoinRequests(community.ID)
+		pendingRequests, err = models.GetPendingJoinRequests(community.ID)
+		if err != nil {
+			log.Printf("Error getting pending requests: %v", err)
+		}
 	}
 
 	tmpl := template.Must(template.New("").Funcs(TemplateFuncMap).ParseFiles("views/layouts/main.html", "views/communities/show.html"))
@@ -118,7 +140,9 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", data); err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		utils.ShowErrorPage(w, r, http.StatusInternalServerError,
+			"Failed to load the community page. Please try again later.",
+			err.Error())
 	}
 }
 

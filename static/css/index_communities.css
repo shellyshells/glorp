@@ -61,6 +61,7 @@
 .filter-controls {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .filter-controls select {
@@ -68,6 +69,32 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     background: white;
+    min-width: 180px;
+    font-size: 14px;
+    color: #1a1a1b;
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 32px;
+}
+
+.filter-controls select:hover {
+    border-color: #0079d3;
+    background-color: #f6f9ff;
+}
+
+.filter-controls select:focus {
+    outline: none;
+    border-color: #0079d3;
+    box-shadow: 0 0 0 2px rgba(0,121,211,0.1);
+}
+
+.filter-controls select option {
+    padding: 8px;
 }
 
 .communities-grid {
@@ -220,6 +247,45 @@
     margin-bottom: 12px;
 }
 
+.communities-tabs {
+    display: flex;
+    gap: 2px;
+    background: #edeff1;
+    padding: 2px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    color: #1a1a1b;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.tab-item i {
+    font-size: 16px;
+}
+
+.tab-item:hover {
+    background: rgba(0,0,0,0.05);
+    color: #0079d3;
+}
+
+.tab-item.active {
+    background: white;
+    color: #0079d3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 @media (max-width: 768px) {
     .communities-header {
         flex-direction: column;
@@ -243,5 +309,22 @@
     .community-actions {
         position: static;
         margin-top: 15px;
+    }
+    
+    .filter-controls {
+        width: 100%;
+    }
+    
+    .filter-controls select {
+        width: 100%;
+    }
+    
+    .communities-tabs {
+        flex-direction: column;
+        gap: 1px;
+    }
+    
+    .tab-item {
+        padding: 10px;
     }
 }

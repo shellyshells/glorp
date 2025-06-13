@@ -1,0 +1,122 @@
+{{define "content"}}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            {{if eq .ErrorCode 404}}
+                <i class="fas fa-search"></i>
+            {{else if eq .ErrorCode 403}}
+                <i class="fas fa-lock"></i>
+            {{else if eq .ErrorCode 500}}
+                <i class="fas fa-exclamation-triangle"></i>
+            {{else}}
+                <i class="fas fa-exclamation-circle"></i>
+            {{end}}
+        </div>
+        
+        <h1 class="error-title">{{.ErrorTitle}}</h1>
+        <p class="error-message">{{.ErrorMessage}}</p>
+        
+        <div class="error-actions">
+            <a href="javascript:history.back()" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Go Back
+            </a>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Go Home
+            </a>
+        </div>
+        
+        {{if .ErrorDetails}}
+        <div class="error-details">
+            <p>Error Code: {{.ErrorCode}}</p>
+            {{if .ErrorDetails}}
+            <pre class="error-stack">{{.ErrorDetails}}</pre>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<style>
+.error-container {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 20px;
+}
+
+.error-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 40px;
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 64px;
+    color: #ff4500;
+    margin-bottom: 20px;
+}
+
+.error-title {
+    color: #1a1a1b;
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.error-message {
+    color: #878a8c;
+    font-size: 16px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.error-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.error-details {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #edeff1;
+    text-align: left;
+}
+
+.error-details p {
+    color: #878a8c;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.error-stack {
+    background: #f6f7f8;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #1a1a1b;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+    .error-container {
+        margin: 20px auto;
+    }
+    
+    .error-content {
+        padding: 20px;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+    }
+    
+    .error-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{{end}} 

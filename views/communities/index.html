@@ -25,20 +25,23 @@
                 </div>
             </form>
         </div>
-        
-        <div class="filter-controls">
-            <select id="visibility-filter" onchange="updateFilter('visibility', this.value)">
-                <option value="">All Communities</option>
-                <option value="public" {{if eq .Filters.Visibility "public"}}selected{{end}}>Public</option>
-                <option value="restricted" {{if eq .Filters.Visibility "restricted"}}selected{{end}}>Restricted</option>
-            </select>
-            
-            <select id="sort-filter" onchange="updateFilter('sort', this.value)">
-                <option value="members" {{if eq .Filters.SortBy "members"}}selected{{end}}>Most Members</option>
-                <option value="created" {{if eq .Filters.SortBy "created"}}selected{{end}}>Newest</option>
-                <option value="name" {{if eq .Filters.SortBy "name"}}selected{{end}}>Name</option>
-            </select>
-        </div>
+    </div>
+
+    <div class="communities-tabs">
+        <a href="/communities" class="tab-item {{if not .Filters.Filter}}active{{end}}">
+            <i class="fas fa-globe"></i> All Communities
+        </a>
+        {{if .User}}
+        <a href="/communities?filter=joined" class="tab-item {{if eq .Filters.Filter "joined"}}active{{end}}">
+            <i class="fas fa-user-check"></i> My Communities
+        </a>
+        {{end}}
+        <a href="/communities?filter=popular" class="tab-item {{if eq .Filters.Filter "popular"}}active{{end}}">
+            <i class="fas fa-fire"></i> Popular
+        </a>
+        <a href="/communities?filter=recent" class="tab-item {{if eq .Filters.Filter "recent"}}active{{end}}">
+            <i class="fas fa-clock"></i> New
+        </a>
     </div>
 
     <div class="communities-grid">
@@ -117,7 +120,7 @@
     {{if gt .Pagination.TotalPages 1}}
     <div class="pagination">
         {{if .Pagination.HasPrev}}
-            <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.Visibility}}&visibility={{.Filters.Visibility}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
+            <a href="?page={{sub .Pagination.CurrentPage 1}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.Filter}}&filter={{.Filters.Filter}}{{end}}" class="pagination-btn">
                 <i class="fas fa-chevron-left"></i> Previous
             </a>
         {{end}}
@@ -127,7 +130,7 @@
         </span>
         
         {{if .Pagination.HasNext}}
-            <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.Visibility}}&visibility={{.Filters.Visibility}}{{end}}{{if .Filters.SortBy}}&sort={{.Filters.SortBy}}{{end}}" class="pagination-btn">
+            <a href="?page={{add .Pagination.CurrentPage 1}}{{if .Filters.Search}}&search={{.Filters.Search}}{{end}}{{if .Filters.Filter}}&filter={{.Filters.Filter}}{{end}}" class="pagination-btn">
                 Next <i class="fas fa-chevron-right"></i>
             </a>
         {{end}}
