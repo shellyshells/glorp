@@ -44,19 +44,8 @@
             });
             
             if (response.ok) {
-                // Update current avatar display
-                const currentAvatar = document.querySelector('.current-avatar-display .user-avatar');
-                const avatarInfo = document.querySelector('.avatar-info p');
-                
-                // Remove all avatar style classes
-                currentAvatar.className = currentAvatar.className.replace(/avatar-\w+/g, '');
-                // Add new style class
-                currentAvatar.classList.add('user-avatar', getAvatarClass(style));
-                
-                // Update info text
-                avatarInfo.textContent = style.charAt(0).toUpperCase() + style.slice(1) + ' style';
-                
-                showFormMessage('avatar-message', 'Avatar style updated successfully!', 'success');
+                // Reload the page to ensure the new avatar style is applied everywhere
+                location.reload();
             } else {
                 const result = await response.text();
                 showFormMessage('avatar-message', result, 'error');

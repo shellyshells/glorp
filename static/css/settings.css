@@ -212,6 +212,119 @@
     font-size: 14px;
 }
 
+/* Avatar Customization */
+.current-avatar-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #edeff1;
+}
+
+.current-avatar-display .user-avatar {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    min-height: 60px;
+    font-size: 32px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.current-avatar-display .avatar-info h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a1a1b;
+}
+
+.current-avatar-display .avatar-info p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.avatar-customization-section {
+    margin-top: 20px;
+}
+
+.avatar-customization-section h3 {
+    margin-bottom: 15px;
+    color: #1a1a1b;
+    font-size: 18px;
+}
+
+.avatar-customization-section p {
+    margin-bottom: 20px;
+    color: #555;
+}
+
+.avatar-style-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.avatar-style-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background: #fdfdfd;
+    text-align: center;
+}
+
+.avatar-style-option:hover {
+    border-color: #0079d3;
+    box-shadow: 0 4px 12px rgba(0, 121, 211, 0.1);
+    transform: translateY(-2px);
+}
+
+.avatar-style-option.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    background: #eaf7ea;
+}
+
+.avatar-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: #ccc; /* Fallback */
+}
+
+/* Avatar specific styles - ensure these match your .user-avatar styles */
+.avatar-default { background-color: #0079d3; } /* Reddit blue */
+.avatar-red { background-color: #ff4500; } /* Reddit orange-red */
+.avatar-blue { background-color: #2196F3; }
+.avatar-green { background-color: #4CAF50; }
+.avatar-purple { background-color: #9C27B0; }
+.avatar-orange { background-color: #FF9800; }
+.avatar-pink { background-color: #E91E63; }
+.avatar-teal { background-color: #009688; }
+.avatar-admin { background-color: #dc3545; } /* Red for admin */
+
+.avatar-style-label {
+    font-size: 13px;
+    color: #1a1a1b;
+    font-weight: 500;
+}
+
+/* Responsive adjustments for settings page */
 @media (max-width: 768px) {
     .settings-content {
         flex-direction: column;
@@ -242,5 +355,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+    }
+    
+    .avatar-style-options {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 }
