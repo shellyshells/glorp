@@ -7,20 +7,22 @@ import (
 )
 
 type Message struct {
-	ID         int       `json:"id"`
-	ThreadID   int       `json:"thread_id"`
-	ParentID   *int      `json:"parent_id"`
-	AuthorID   int       `json:"author_id"`
-	Author     *User     `json:"author,omitempty"`
-	Content    string    `json:"content"`
-	CreatedAt  time.Time `json:"created_at"`
-	Likes      int       `json:"likes"`
-	Dislikes   int       `json:"dislikes"`
-	Score      int       `json:"score"`
-	UserVote   int       `json:"user_vote,omitempty"` // 1 for like, -1 for dislike, 0 for no vote
-	Replies    []Message `json:"replies,omitempty"`
-	ReplyCount int       `json:"reply_count"`
-	Level      int       `json:"level"` // Depth level for nested display
+	ID          int       `json:"id"`
+	ThreadID    int       `json:"thread_id"`
+	ParentID    *int      `json:"parent_id"`
+	AuthorID    int       `json:"author_id"`
+	Author      *User     `json:"author,omitempty"`
+	Content     string    `json:"content"`
+	CreatedAt   time.Time `json:"created_at"`
+	Likes       int       `json:"likes"`
+	Dislikes    int       `json:"dislikes"`
+	Score       int       `json:"score"`
+	UserVote    int       `json:"user_vote,omitempty"` // 1 for like, -1 for dislike, 0 for no vote
+	Replies     []Message `json:"replies,omitempty"`
+	ReplyCount  int       `json:"reply_count"`
+	Level       int       `json:"level"`                  // Depth level for nested display
+	ThreadTitle string    `json:"thread_title,omitempty"` // Add ThreadTitle field
+	IsEdited    bool      `json:"is_edited"`
 }
 
 type MessageFilters struct {
@@ -269,10 +271,14 @@ func getMessageReplies(parentID, userID, level, maxLevel int) []Message {
 }
 
 func DeleteMessage(messageID int) error {
-	// This will also delete related votes due to CASCADE DELETE
-	// And recursively delete all child messages
-	query := `DELETE FROM messages WHERE id = ?`
+	query := "DELETE FROM messages WHERE id = ?"
 	_, err := config.DB.Exec(query, messageID)
+	return err
+}
+
+func UpdateMessageContent(messageID int, newContent string) error {
+	query := "UPDATE messages SET content = ?, is_edited = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+	_, err := config.DB.Exec(query, newContent, messageID)
 	return err
 }
 
@@ -300,7 +306,7 @@ func GetMessageCount() (int, error) {
 
 func GetMessageCountByUser(userID int) (int, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM messages WHERE author_id = ?`
+	query := "SELECT COUNT(*) FROM messages WHERE author_id = ?"
 	err := config.DB.QueryRow(query, userID).Scan(&count)
 	return count, err
 }
@@ -382,4 +388,42 @@ func GetMessagesByUser(userID int, filters MessageFilters) ([]Message, int, erro
 	}
 
 	return messages, total, nil
+}
+
+func GetAllMessages() ([]Message, error) {
+	var messages []Message
+	query := `
+		SELECT m.id, m.thread_id, m.parent_id, m.author_id, m.content, m.created_at, u.username, t.title as thread_title, m.is_edited
+		FROM messages m
+		JOIN users u ON m.author_id = u.id
+		JOIN threads t ON m.thread_id = t.id
+		ORDER BY m.created_at DESC
+	`
+
+	rows, err := config.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var message Message
+		var authorUsername string
+		var threadTitle string
+		var parentID *int
+		err := rows.Scan(
+			&message.ID, &message.ThreadID, &parentID, &message.AuthorID, &message.Content,
+			&message.CreatedAt, &authorUsername, &threadTitle,
+			&message.IsEdited,
+		)
+		if err != nil {
+			continue
+		}
+		message.ParentID = parentID
+		message.Author = &User{ID: message.AuthorID, Username: authorUsername}
+		message.ThreadTitle = threadTitle // Populate ThreadTitle
+		messages = append(messages, message)
+	}
+
+	return messages, nil
 }

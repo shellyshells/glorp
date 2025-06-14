@@ -132,6 +132,9 @@ func main() {
 	apiAdmin.Use(middleware.AuthMiddleware, middleware.AdminMiddleware)
 	apiAdmin.HandleFunc("/ban/{id:[0-9]+}", controllers.BanUserHandler).Methods("POST")
 	apiAdmin.HandleFunc("/threads/{id:[0-9]+}/status", controllers.UpdateThreadStatusHandler).Methods("PUT")
+	apiAdmin.HandleFunc("/users/{id:[0-9]+}", controllers.DeleteUserHandler).Methods("DELETE")
+	apiAdmin.HandleFunc("/messages/{id:[0-9]+}", controllers.DeleteMessageHandler).Methods("DELETE")
+	apiAdmin.HandleFunc("/messages/{id:[0-9]+}", controllers.EditMessageHandler).Methods("PUT")
 
 	// Add error handling middleware
 	r.Use(errorHandler)

@@ -604,3 +604,102 @@ func GetPendingJoinRequests(communityID int) ([]CommunityJoinRequest, error) {
 
 	return requests, nil
 }
+
+// GetCommunityCount returns the total number of communities
+func GetCommunityCount() (int, error) {
+	var count int
+	err := config.DB.QueryRow("SELECT COUNT(*) FROM communities").Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// UpdateCommunity updates a community's name and description
+func UpdateCommunity(communityID int, name, description string) error {
+	query := "UPDATE communities SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+	_, err := config.DB.Exec(query, name, description, communityID)
+	return err
+}
+
+// DeleteCommunity deletes a community and all its associated data
+func DeleteCommunity(communityID int) error {
+	// Start a transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete community memberships
+	_, err = tx.Exec("DELETE FROM community_memberships WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Delete community join requests
+	_, err = tx.Exec("DELETE FROM community_join_requests WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Delete community rules
+	_, err = tx.Exec("DELETE FROM community_rules WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Update threads to remove community association
+	_, err = tx.Exec("UPDATE threads SET community_id = NULL WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Finally, delete the community
+	_, err = tx.Exec("DELETE FROM communities WHERE id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
+// TransferCommunityOwnership transfers ownership of a community to a new user
+func TransferCommunityOwnership(communityID, newOwnerID int) error {
+	// Start a transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Update community creator
+	_, err = tx.Exec("UPDATE communities SET creator_id = ? WHERE id = ?", newOwnerID, communityID)
+	if err != nil {
+		return err
+	}
+
+	// Update community membership for new owner
+	_, err = tx.Exec(`
+		INSERT INTO community_memberships (community_id, user_id, role, status, joined_at)
+		VALUES (?, ?, 'creator', 'active', CURRENT_TIMESTAMP)
+		ON CONFLICT(community_id, user_id) DO UPDATE SET role = 'creator', status = 'active'
+	`, communityID, newOwnerID)
+	if err != nil {
+		return err
+	}
+
+	// Update old creator's role to member
+	_, err = tx.Exec(`
+		UPDATE community_memberships 
+		SET role = 'member' 
+		WHERE community_id = ? AND role = 'creator'
+	`, communityID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}

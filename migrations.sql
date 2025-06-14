@@ -139,6 +139,9 @@ SET member_count = (
     WHERE cm.community_id = communities.id AND cm.status = 'active'
 );
 
+-- New migration: Add is_edited column to messages table
+ALTER TABLE messages ADD COLUMN is_edited BOOLEAN DEFAULT 0;
+
 COMMIT;
 
 -- Verification queries (run these to check the migration)

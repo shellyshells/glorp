@@ -108,30 +108,30 @@
                         <span>{{.Thread.MessageCount}} {{pluralize .Thread.MessageCount "comment" "comments"}}</span>
                     </div>
                     
-                    <div class="thread-action" onclick="shareThread('{{.Thread.ID}}')">
-                        <i class="fas fa-share"></i>
-                        <span>Share</span>
-                    </div>
-                    
-                    <div class="thread-action" onclick="saveThread('{{.Thread.ID}}')">
-                        <i class="fas fa-bookmark"></i>
-                        <span>Save</span>
-                    </div>
-                    
-                    {{if .User}}
-                        {{if or (eq .User.ID .Thread.AuthorID) (eq .User.Role "admin")}}
-                        <div class="thread-action">
-                            <a href="/threads/{{.Thread.ID}}/edit" style="color: inherit; text-decoration: none;">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit</span>
+                    <div class="thread-options-dropdown">
+                        <div class="thread-action thread-dropdown-toggle" onclick="toggleThreadOptions(this, '{{.Thread.ID}}', {{.IsAuthor}}, {{.IsAdmin}})">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                        <div class="thread-dropdown-menu">
+                            <a href="#" class="dropdown-item" onclick="shareThread('{{.Thread.ID}}'); return false;">
+                                <i class="fas fa-share"></i> Share
                             </a>
+                            <a href="#" class="dropdown-item" onclick="saveThread('{{.Thread.ID}}'); return false;">
+                                <i class="fas fa-bookmark"></i> Save
+                            </a>
+                            {{if or (eq .User.ID .Thread.AuthorID) (eq .User.Role "admin")}}
+                            <hr class="dropdown-divider">
+                            <a href="/threads/{{.Thread.ID}}/edit" class="dropdown-item">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            {{end}}
+                            {{if eq .User.Role "admin"}}
+                            <a href="#" class="dropdown-item dropdown-item-danger" onclick="deleteThread('{{.Thread.ID}}'); return false;">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                            {{end}}
                         </div>
-                        <div class="thread-action" onclick="deleteThread('{{.Thread.ID}}')">
-                            <i class="fas fa-trash"></i>
-                            <span>Delete</span>
-                        </div>
-                        {{end}}
-                    {{end}}
+                    </div>
                 </div>
             </div>
         </div>

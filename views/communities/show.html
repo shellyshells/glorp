@@ -235,23 +235,30 @@
                                         <span>{{.MessageCount}} {{pluralize .MessageCount "comment" "comments"}}</span>
                                     </div>
                                     
-                                    <div class="thread-action" onclick="shareThread('{{.ID}}')">
-                                        <i class="fas fa-share"></i>
-                                        <span>Share</span>
-                                    </div>
-                                    
-                                    <div class="thread-action" onclick="saveThread('{{.ID}}')">
-                                        <i class="fas fa-bookmark"></i>
-                                        <span>Save</span>
-                                    </div>
-                                    
-                                    {{if $.User}}
-                                        {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin") (eq $.Community.UserRole "creator") (eq $.Community.UserRole "admin") (eq $.Community.UserRole "moderator")}}
-                                        <div class="thread-action" onclick="showThreadOptions('{{.ID}}')">
+                                    <div class="thread-options-dropdown">
+                                        <div class="thread-action thread-dropdown-toggle" onclick="toggleThreadOptions(this, '{{.ID}}', {{.IsAuthor}}, {{or (eq $.User.Role "admin") (eq $.Community.UserRole "creator") (eq $.Community.UserRole "admin") (eq $.Community.UserRole "moderator")}})">
                                             <i class="fas fa-ellipsis-h"></i>
                                         </div>
-                                        {{end}}
-                                    {{end}}
+                                        <div class="thread-dropdown-menu">
+                                            <a href="#" class="dropdown-item" onclick="shareThread('{{.ID}}'); return false;">
+                                                <i class="fas fa-share"></i> Share
+                                            </a>
+                                            <a href="#" class="dropdown-item" onclick="saveThread('{{.ID}}'); return false;">
+                                                <i class="fas fa-bookmark"></i> Save
+                                            </a>
+                                            {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin") (eq $.Community.UserRole "creator") (eq $.Community.UserRole "admin") (eq $.Community.UserRole "moderator")}}
+                                            <hr class="dropdown-divider">
+                                            <a href="/threads/{{.ID}}/edit" class="dropdown-item">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            {{end}}
+                                            {{if or (eq $.User.Role "admin") (eq $.Community.UserRole "creator") (eq $.Community.UserRole "admin") (eq $.Community.UserRole "moderator")}}
+                                            <a href="#" class="dropdown-item dropdown-item-danger" onclick="deleteThread('{{.ID}}'); return false;">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </a>
+                                            {{end}}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

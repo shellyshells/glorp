@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -301,9 +302,75 @@ func BanUser(userID int) error {
 }
 
 func UnbanUser(userID int) error {
-	query := `UPDATE users SET banned = FALSE WHERE id = ?`
+	query := "UPDATE users SET banned = 0 WHERE id = ?"
 	_, err := config.DB.Exec(query, userID)
 	return err
+}
+
+func DeleteUser(userID int) error {
+	// Start a transaction for atomicity
+	tx, err := config.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting transaction for user deletion: %v", err)
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			log.Printf("Recovered from panic during user deletion transaction: %v", r)
+		}
+	}()
+
+	// Delete user's messages
+	_, err = tx.Exec("DELETE FROM messages WHERE author_id = ?", userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting messages for user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user messages: %w", err)
+	}
+
+	// Delete user's threads
+	_, err = tx.Exec("DELETE FROM threads WHERE author_id = ?", userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting threads for user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user threads: %w", err)
+	}
+
+	// Delete user's votes
+	_, err = tx.Exec("DELETE FROM thread_votes WHERE user_id = ?", userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting thread votes for user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user thread votes: %w", err)
+	}
+
+	_, err = tx.Exec("DELETE FROM message_votes WHERE user_id = ?", userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting message votes for user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user message votes: %w", err)
+	}
+
+	// Delete user from communities
+	_, err = tx.Exec("DELETE FROM community_members WHERE user_id = ?", userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting community memberships for user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user community memberships: %w", err)
+	}
+
+	// Finally, delete the user
+	query := "DELETE FROM users WHERE id = ?"
+	_, err = tx.Exec(query, userID)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Error deleting user %d: %v", userID, err)
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return tx.Commit()
 }
 
 func IsUsernameUnique(username string) bool {
@@ -350,4 +417,80 @@ func (u *User) GetAvatarStyle() string {
 		return "default"
 	}
 	return u.AvatarStyle
+}
+
+func GetUserCount() (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM users"
+	err := config.DB.QueryRow(query).Scan(&count)
+	if err != nil {
+		log.Printf("Error getting user count: %v", err)
+		return 0, err
+	}
+	return count, nil
+}
+
+func GetAllUsers() ([]User, error) {
+	var users []User
+	query := `SELECT id, username, 
+			         COALESCE(display_name, username) as display_name, 
+			         email, password_hash, 
+			         COALESCE(role, 'user') as role, 
+			         COALESCE(banned, 0) as banned,
+			         COALESCE(bio, '') as bio, 
+			         COALESCE(location, '') as location, 
+			         COALESCE(website, '') as website, 
+			         COALESCE(avatar_url, '') as avatar_url,
+			         COALESCE(avatar_style, 'default') as avatar_style,
+			         COALESCE(show_email, 0) as show_email, 
+			         COALESCE(show_online, 1) as show_online, 
+			         COALESCE(allow_messages, 1) as allow_messages, 
+			         COALESCE(public_profile, 1) as public_profile,
+			         created_at, last_login, 
+			         COALESCE(last_activity, created_at) as last_activity
+			  FROM users ORDER BY created_at DESC`
+
+	rows, err := config.DB.Query(query)
+	if err != nil {
+		log.Printf("Error getting all users: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user User
+		var lastLogin sql.NullTime
+		var lastActivityStr sql.NullString
+		err := rows.Scan(
+			&user.ID, &user.Username, &user.DisplayName, &user.Email, &user.PasswordHash,
+			&user.Role, &user.Banned, &user.Bio, &user.Location, &user.Website, &user.AvatarURL,
+			&user.AvatarStyle, &user.ShowEmail, &user.ShowOnline, &user.AllowMessages, &user.PublicProfile,
+			&user.CreatedAt, &lastLogin, &lastActivityStr,
+		)
+		if err != nil {
+			log.Printf("Error scanning user row: %v", err)
+			continue
+		}
+
+		if lastLogin.Valid {
+			user.LastLogin = &lastLogin.Time
+		}
+
+		// Parse last_activity from string
+		if lastActivityStr.Valid && lastActivityStr.String != "" {
+			if parsedTime, err := time.Parse("2006-01-02 15:04:05", lastActivityStr.String); err == nil {
+				user.LastActivity = parsedTime
+			} else if parsedTime, err := time.Parse(time.RFC3339, lastActivityStr.String); err == nil {
+				user.LastActivity = parsedTime
+			} else {
+				// Fallback to created_at if parsing fails
+				user.LastActivity = user.CreatedAt
+			}
+		} else {
+			user.LastActivity = user.CreatedAt
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

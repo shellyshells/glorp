@@ -94,39 +94,6 @@ func CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	messageID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "Invalid message ID", http.StatusBadRequest)
-		return
-	}
-
-	user := middleware.GetUserFromContext(r)
-	if user == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	// Check permissions
-	if !models.CanUserModifyMessage(messageID, user.ID, user.Role) {
-		http.Error(w, "Access denied", http.StatusForbidden)
-		return
-	}
-
-	err = models.DeleteMessage(messageID)
-	if err != nil {
-		http.Error(w, "Failed to delete message: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Message deleted successfully",
-	})
-}
-
 func VoteMessageHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	messageID, err := strconv.Atoi(vars["id"])

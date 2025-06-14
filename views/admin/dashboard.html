@@ -25,56 +25,97 @@
                 <p>Total Messages</p>
             </div>
         </div>
+
+<div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-message"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{.TotalUsers}}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-message"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{.TotalCommunities}}</h3>
+                <p>Total Communities</p>
+            </div>
+        </div>
     </div>
 
     <div class="admin-sections">
         <div class="admin-section">
-            <h2><i class="fas fa-list"></i> Recent Threads</h2>
+            <h2><i class="fas fa-users"></i> User Management</h2>
             <div class="admin-table-container">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>Title</th>
-                            <th>Author</th>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
                             <th>Status</th>
-                            <th>Created</th>
-                            <th>Messages</th>
+                            <th>Joined</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {{range .RecentThreads}}
+                        {{range .Users}}
                         <tr>
-                            <td>
-                                <a href="/threads/{{.ID}}" class="thread-link">{{.Title}}</a>
-                            </td>
-                            <td>{{.Author.Username}}</td>
-                            <td>
-                                <span class="status-badge status-{{.Status}}">
-                                    {{if eq .Status "open"}}
-                                        <i class="fas fa-unlock"></i>
-                                    {{else if eq .Status "closed"}}
-                                        <i class="fas fa-lock"></i>
-                                    {{else if eq .Status "archived"}}
-                                        <i class="fas fa-archive"></i>
-                                    {{end}}
-                                    {{.Status}}
-                                </span>
-                            </td>
+                            <td>{{.ID}}</td>
+                            <td>{{.Username}}</td>
+                            <td>{{.Email}}</td>
+                            <td>{{if .Banned}}<span class="status-badge status-banned">Banned</span>{{else}}<span class="status-badge status-active">Active</span>{{end}}</td>
                             <td>{{.CreatedAt.Format "Jan 02, 2006"}}</td>
-                            <td>{{.MessageCount}}</td>
                             <td>
-                                <div class="action-buttons">
-                                    <select class="status-select" onchange="updateThreadStatus('{{.ID}}', this.value)">
-                                        <option value="">Change Status</option>
-                                        <option value="open" {{if eq .Status "open"}}disabled{{end}}>Open</option>
-                                        <option value="closed" {{if eq .Status "closed"}}disabled{{end}}>Close</option>
-                                        <option value="archived" {{if eq .Status "archived"}}disabled{{end}}>Archive</option>
-                                    </select>
-                                    <button onclick="deleteThread('{{.ID}}')" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                                <button onclick="banUser('{{.ID}}', '{{.Username}}')" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-ban"></i> {{if .Banned}}Unban{{else}}Ban{{end}} User
+                                </button>
+                                <button onclick="deleteUser('{{.ID}}')" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete User
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <div class="admin-section">
+            <h2><i class="fas fa-comment-dots"></i> Message Management</h2>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Thread</th>
+                            <th>Author</th>
+                            <th>Content</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Messages}}
+                        <tr>
+                            <td>{{.ID}}</td>
+                            <td><a href="/threads/{{.ThreadID}}" class="thread-link">{{.ThreadTitle}}</a></td>
+                            <td>{{.Author.Username}}</td>
+                            <td>{{.Content}}</td>
+                            <td>{{.CreatedAt.Format "Jan 02, 2006"}}</td>
+                            <td>
+                                <button onclick="deleteMessage('{{.ID}}')" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                                {{if not .IsEdited}}
+                                <button onclick="editMessage('{{.ID}}')" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                {{end}}
                             </td>
                         </tr>
                         {{end}}
@@ -140,6 +181,40 @@
                 </table>
             </div>
         </div>
+
+        <div class="admin-section">
+            <h2><i class="fas fa-users"></i> Community Management</h2>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Communities}}
+                        <tr>
+                            <td>{{.ID}}</td>
+                            <td>{{.Name}}</td>
+                            <td>{{.Description}}</td>
+                            <td>{{.CreatedAt.Format "Jan 02, 2006"}}</td>
+                            <td>
+                                <button onclick="deleteCommunity('{{.ID}}')" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                                <button onclick="editCommunity('{{.ID}}', '{{.Name}}', '{{.Description}}')" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
     </div>
 </div>
 
