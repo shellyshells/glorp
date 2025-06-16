@@ -444,18 +444,6 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-function saveThread(threadId) {
-    if (window.Glorp) {
-        Glorp.showNotification('Save feature coming soon!', 'info');
-    }
-}
-
-function showThreadOptions(threadId) {
-    if (window.Glorp) {
-        Glorp.showNotification('Thread options coming soon!', 'info');
-    }
-}
-
 // Close image modal with escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {

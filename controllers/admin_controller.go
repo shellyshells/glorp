@@ -252,8 +252,14 @@ func DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := middleware.GetUserFromContext(r)
-	if user == nil || user.Role != "admin" {
+	if user == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if user is authorized to delete the message (either admin or author)
+	if !models.CanUserModifyMessage(messageID, user.ID, user.Role) {
+		http.Error(w, "Unauthorized to delete this message", http.StatusForbidden)
 		return
 	}
 

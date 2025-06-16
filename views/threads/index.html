@@ -202,15 +202,15 @@
                                     <span>Share</span>
                                 </div>
                                 
-                                <div class="thread-action" onclick="saveThread('{{.ID}}')">
-                                    <i class="fas fa-bookmark"></i>
-                                    <span>Save</span>
-                                </div>
-                                
                                 {{if $.User}}
                                     {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
-                                    <div class="thread-action" onclick="showThreadOptions('{{.ID}}')">
-                                        <i class="fas fa-ellipsis-h"></i>
+                                    <div class="thread-action" onclick="window.location.href='/threads/{{.ID}}/edit'">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Edit</span>
+                                    </div>
+                                    <div class="thread-action thread-action-danger" onclick="deleteThread('{{.ID}}'); return false;">
+                                        <i class="fas fa-trash-alt"></i>
+                                        <span>Delete</span>
                                     </div>
                                     {{end}}
                                 {{end}}

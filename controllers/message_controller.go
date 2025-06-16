@@ -123,18 +123,18 @@ func VoteMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if message exists
-	message, err := models.GetMessageByID(messageID, user.ID)
-	if err != nil {
-		http.Error(w, "Message not found", http.StatusNotFound)
-		return
-	}
+	// Check if message exists (removed to allow self-voting)
+	// message, err := models.GetMessageByID(messageID, user.ID)
+	// if err != nil {
+	// 	http.Error(w, "Message not found", http.StatusNotFound)
+	// 	return
+	// }
 
-	// Users cannot vote on their own messages
-	if message.AuthorID == user.ID {
-		http.Error(w, "Cannot vote on your own message", http.StatusForbidden)
-		return
-	}
+	// Users can now vote on their own messages
+	// if message.AuthorID == user.ID {
+	// 	http.Error(w, "Cannot vote on your own message", http.StatusForbidden)
+	// 	return
+	// }
 
 	err = models.VoteMessage(messageID, user.ID, req.VoteType)
 	if err != nil {

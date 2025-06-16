@@ -569,3 +569,147 @@ if (!document.querySelector('#glorp-animations')) {
     `;
     document.head.appendChild(animationStyle);
 }
+
+// Function to delete a thread
+async function deleteThread(threadId) {
+    if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/threads/${threadId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(data.message || 'Post deleted successfully!', 'success');
+            // Redirect to home page or user's profile after deletion
+            setTimeout(() => {
+                window.location.href = '/'; 
+            }, 1000);
+        } else {
+            showNotification(data.message || 'Failed to delete post.', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting thread:', error);
+        showNotification('An error occurred while deleting the post.', 'error');
+    }
+}
+
+// Function to delete a comment
+async function deleteComment(commentId) {
+    if (!confirm("Are you sure you want to delete this comment? This action cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/messages/${commentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(data.message || 'Comment deleted successfully!', 'success');
+            // Remove the comment from the DOM
+            const commentElement = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+                commentElement.remove();
+            }
+        } else {
+            showNotification(data.message || 'Failed to delete comment.', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        showNotification('An error occurred while deleting the comment.', 'error');
+    }
+}
+
+// Function to vote on a thread
+async function voteThread(threadId, voteType) {
+    try {
+        const response = await fetch(`/api/threads/${threadId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vote_type: voteType }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            document.getElementById('thread-score').textContent = data.score;
+            const upvoteBtn = document.querySelector(`.thread-vote-section button[onclick*="voteThread(\'${threadId}\', 1)"]`);
+            const downvoteBtn = document.querySelector(`.thread-vote-section button[onclick*="voteThread(\'${threadId}\', -1)"]`);
+
+            if (upvoteBtn && downvoteBtn) {
+                upvoteBtn.classList.remove('upvoted');
+                downvoteBtn.classList.remove('downvoted');
+
+                if (data.user_vote === 1) {
+                    upvoteBtn.classList.add('upvoted');
+                } else if (data.user_vote === -1) {
+                    downvoteBtn.classList.add('downvoted');
+                }
+            }
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message || 'Failed to record vote.', 'error');
+        }
+    } catch (error) {
+        console.error('Error voting on thread:', error);
+        showNotification('An error occurred while voting.', 'error');
+    }
+}
+
+// Function to vote on a comment
+async function voteComment(commentId, voteType) {
+    try {
+        const response = await fetch(`/api/messages/${commentId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vote_type: voteType }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            const commentItem = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
+            if (commentItem) {
+                commentItem.querySelector('.comment-score').textContent = data.score;
+                commentItem.querySelector('.comment-score-inline').textContent = `${data.score} points`;
+                
+                const upvoteBtn = commentItem.querySelector(`.comment-vote-btn[onclick*="voteComment(\'${commentId}\', 1)"]`);
+                const downvoteBtn = commentItem.querySelector(`.comment-vote-btn[onclick*="voteComment(\'${commentId}\', -1)"]`);
+
+                if (upvoteBtn && downvoteBtn) {
+                    upvoteBtn.classList.remove('upvoted');
+                    downvoteBtn.classList.remove('downvoted');
+
+                    if (data.user_vote === 1) {
+                        upvoteBtn.classList.add('upvoted');
+                    } else if (data.user_vote === -1) {
+                        downvoteBtn.classList.add('downvoted');
+                    }
+                }
+            }
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message || 'Failed to record vote.', 'error');
+        }
+    } catch (error) {
+        console.error('Error voting on comment:', error);
+        showNotification('An error occurred while voting.', 'error');
+    }
+}

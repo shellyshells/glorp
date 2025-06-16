@@ -505,9 +505,9 @@ func DeleteThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check permissions
+	// Check if user is authorized to delete the thread (either admin or author)
 	if !models.CanUserModifyThread(threadID, user.ID, user.Role) {
-		http.Error(w, "Access denied", http.StatusForbidden)
+		http.Error(w, "Unauthorized to delete this thread", http.StatusForbidden)
 		return
 	}
 

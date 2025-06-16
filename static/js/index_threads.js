@@ -502,32 +502,6 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// Save thread (placeholder)
-function saveThread(threadId) {
-    if (window.Glorp) {
-        Glorp.showNotification('Save feature coming soon!', 'info');
-    }
-}
-
-// Show thread options
-function showThreadOptions(threadId) {
-    const options = [
-        'Edit Post',
-        'Delete Post',
-        'Pin Post',
-        'Lock Comments'
-    ];
-    
-    // Simple implementation - you can enhance this with a proper dropdown
-    const action = prompt('Choose action:\n' + options.join('\n'));
-    
-    if (action) {
-        if (window.Glorp) {
-            Glorp.showNotification(`${action} feature coming soon!`, 'info');
-        }
-    }
-}
-
 // Template helper functions
 function sub(a, b) { return a - b; }
 function add(a, b) { return a + b; }
