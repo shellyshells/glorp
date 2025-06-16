@@ -596,4 +596,154 @@
 
 <link rel="stylesheet" href="/static/css/show_threads.css">
 <link rel="icon" href="/static/images/cat_icon.png" type="image/x-icon">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const commentForm = document.getElementById('comment-form');
+        const commentContent = document.getElementById('comment-content');
+        const commentError = document.getElementById('comment-error');
+
+        if (commentForm) {
+            commentForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                commentError.style.display = 'none';
+
+                const content = commentContent.value.trim();
+                if (content === '') {
+                    commentError.textContent = 'Comment cannot be empty.';
+                    commentError.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/threads/{{.Thread.ID}}/messages`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content: content })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showNotification('Comment posted successfully!', 'success');
+                        commentContent.value = ''; // Clear the textarea
+                        // Optionally, dynamically add the new comment to the list
+                        // For now, we'll suggest a page reload for simplicity
+                        setTimeout(() => { location.reload(); }, 1000);
+                    } else {
+                        commentError.textContent = result.error || result.message || 'Failed to post comment.';
+                        commentError.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error posting comment:', error);
+                    commentError.textContent = 'Network error or server unreachable.';
+                    commentError.style.display = 'block';
+                }
+            });
+        }
+    });
+
+    // This function should exist in app.js or similar global script
+    function showNotification(message, type) {
+        // Placeholder for showNotification. Ensure it's globally available.
+        console.log(`Notification (${type}): ${message}`);
+        const notificationArea = document.body; // Or a specific notification area element
+        const notificationDiv = document.createElement('div');
+        notificationDiv.classList.add('notification', `notification-${type}`);
+        notificationDiv.textContent = message;
+        notificationArea.appendChild(notificationDiv);
+
+        setTimeout(() => {
+            notificationDiv.remove();
+        }, 3000);
+    }
+
+    async function submitReply(event, parentID) {
+        event.preventDefault();
+        const form = event.target;
+        const textarea = form.querySelector('textarea');
+        const content = textarea.value.trim();
+        const threadID = {{.Thread.ID}}; // Get thread ID from context
+        const replyError = form.querySelector('.error-message');
+
+        if (replyError) replyError.style.display = 'none';
+
+        if (content === '') {
+            if (replyError) {
+                replyError.textContent = 'Reply cannot be empty.';
+                replyError.style.display = 'block';
+            }
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/threads/${threadID}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content, parent_id: parseInt(parentID) })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showNotification('Reply posted successfully!', 'success');
+                textarea.value = ''; // Clear the textarea
+                // Reload the page to show new reply
+                setTimeout(() => { location.reload(); }, 1000);
+            } else {
+                const errorMessage = result.error || result.message || 'Failed to post reply.';
+                if (replyError) {
+                    replyError.textContent = errorMessage;
+                    replyError.style.display = 'block';
+                }
+                showNotification(errorMessage, 'error');
+            }
+        } catch (error) {
+            console.error('Error posting reply:', error);
+            if (replyError) {
+                replyError.textContent = 'Network error or server unreachable.';
+                replyError.style.display = 'block';
+            }
+            showNotification('Network error or server unreachable.', 'error');
+        }
+    }
+
+    function toggleReplyForm(messageID) {
+        const replyForm = document.getElementById(`reply-form-${messageID}`);
+        if (replyForm) {
+            replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            // Clear content and error message when showing the form
+            if (replyForm.style.display === 'block') {
+                replyForm.querySelector('textarea').value = '';
+                const errorDiv = replyForm.querySelector('.error-message');
+                if (errorDiv) errorDiv.style.display = 'none';
+            }
+        }
+    }
+
+    function cancelReply(messageID) {
+        const replyForm = document.getElementById(`reply-form-${messageID}`);
+        if (replyForm) {
+            replyForm.style.display = 'none';
+            replyForm.querySelector('textarea').value = '';
+            const errorDiv = replyForm.querySelector('.error-message');
+            if (errorDiv) errorDiv.style.display = 'none';
+        }
+    }
+
+    // Add a div for error messages in the reply form
+    // This will be placed right before the closing form tag
+    document.querySelectorAll('.reply-form form').forEach(form => {
+        if (!form.querySelector('.error-message')) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.style.display = 'none';
+            form.appendChild(errorDiv);
+        }
+    });
+</script>
 {{end}}

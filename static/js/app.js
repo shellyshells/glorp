@@ -647,7 +647,19 @@ async function voteThread(threadId, voteType) {
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById('thread-score').textContent = data.score;
+            // Try to find the score element by ID first (for thread show page)
+            let scoreElement = document.getElementById('thread-score');
+            
+            // If not found, try to find it by data-thread-id (for thread list pages)
+            if (!scoreElement) {
+                scoreElement = document.querySelector(`.vote-score[data-thread-id="${threadId}"]`);
+            }
+
+            if (scoreElement) {
+                scoreElement.textContent = data.score;
+                scoreElement.dataset.score = data.score;
+            }
+
             const upvoteBtn = document.querySelector(`.thread-vote-section button[onclick*="voteThread(\'${threadId}\', 1)"]`);
             const downvoteBtn = document.querySelector(`.thread-vote-section button[onclick*="voteThread(\'${threadId}\', -1)"]`);
 
