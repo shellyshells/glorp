@@ -188,16 +188,14 @@ func CreateThreadViewHandler(w http.ResponseWriter, r *http.Request) {
 	var availableCommunities []models.Community
 
 	// Get user's communities (communities they're a member of)
-	if user != nil {
-		userCommunityFilters := models.CommunityFilters{
-			UserID: user.ID,
-			SortBy: "name",
-			Limit:  100,
-		}
-		userCommunities, _, err := models.GetCommunities(userCommunityFilters)
-		if err == nil {
-			availableCommunities = append(availableCommunities, userCommunities...)
-		}
+	userCommunityFilters := models.CommunityFilters{
+		UserID: user.ID,
+		SortBy: "name",
+		Limit:  100,
+	}
+	userCommunities, _, err := models.GetCommunities(userCommunityFilters)
+	if err == nil {
+		availableCommunities = append(availableCommunities, userCommunities...)
 	}
 
 	// Also get public communities that allow open posting
