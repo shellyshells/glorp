@@ -153,9 +153,11 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 
 	messages, totalMessages, err := models.GetMessages(messageFilters)
 	if err != nil {
+		log.Printf("Error loading messages for thread %d: %v", threadID, err)
 		http.Error(w, "Failed to load messages", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Successfully loaded %d messages for thread %d", len(messages), threadID)
 
 	pagination := utils.CalculatePagination(totalMessages, page, limit)
 

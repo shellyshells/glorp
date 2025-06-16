@@ -22,7 +22,6 @@ type Message struct {
 	ReplyCount  int       `json:"reply_count"`
 	Level       int       `json:"level"`                  // Depth level for nested display
 	ThreadTitle string    `json:"thread_title,omitempty"` // Add ThreadTitle field
-	IsEdited    bool      `json:"is_edited"`
 }
 
 type MessageFilters struct {
@@ -393,10 +392,18 @@ func GetMessagesByUser(userID int, filters MessageFilters) ([]Message, int, erro
 func GetAllMessages() ([]Message, error) {
 	var messages []Message
 	query := `
-		SELECT m.id, m.thread_id, m.parent_id, m.author_id, m.content, m.created_at, u.username, t.title as thread_title, m.is_edited
-		FROM messages m
-		JOIN users u ON m.author_id = u.id
-		JOIN threads t ON m.thread_id = t.id
+		SELECT m.id, m.thread_id, m.parent_id, m.author_id, m.content, m.created_at, u.username,
+		       COALESCE(SUM(CASE WHEN v.vote_type = 1 THEN 1 ELSE 0 END), 0) as likes,
+		       COALESCE(SUM(CASE WHEN v.vote_type = -1 THEN 1 ELSE 0 END), 0) as dislikes,
+		       COALESCE(SUM(v.vote_type), 0) as score,
+			   COUNT(DISTINCT replies.id) as reply_count,
+			   t.title AS thread_title -- Include thread title
+		FROM messages m 
+		LEFT JOIN users u ON m.author_id = u.id 
+		LEFT JOIN votes v ON m.id = v.message_id
+		LEFT JOIN messages replies ON m.id = replies.parent_id
+		LEFT JOIN threads t ON m.thread_id = t.id -- Join with threads table
+		GROUP BY m.id
 		ORDER BY m.created_at DESC
 	`
 
@@ -409,19 +416,24 @@ func GetAllMessages() ([]Message, error) {
 	for rows.Next() {
 		var message Message
 		var authorUsername string
-		var threadTitle string
 		var parentID *int
+
 		err := rows.Scan(
 			&message.ID, &message.ThreadID, &parentID, &message.AuthorID, &message.Content,
-			&message.CreatedAt, &authorUsername, &threadTitle,
-			&message.IsEdited,
+			&message.CreatedAt, &authorUsername, &message.Likes, &message.Dislikes,
+			&message.Score, &message.ReplyCount,
+			&message.ThreadTitle,
 		)
 		if err != nil {
 			continue
 		}
+
 		message.ParentID = parentID
-		message.Author = &User{ID: message.AuthorID, Username: authorUsername}
-		message.ThreadTitle = threadTitle // Populate ThreadTitle
+		message.Author = &User{
+			ID:       message.AuthorID,
+			Username: authorUsername,
+		}
+
 		messages = append(messages, message)
 	}
 

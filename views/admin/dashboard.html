@@ -111,11 +111,9 @@
                                 <button onclick="deleteMessage('{{.ID}}')" class="btn btn-sm btn-danger">
                                     <i class="fas fa-trash"></i> Delete
                                 </button>
-                                {{if not .IsEdited}}
                                 <button onclick="editMessage('{{.ID}}')" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                {{end}}
                             </td>
                         </tr>
                         {{end}}

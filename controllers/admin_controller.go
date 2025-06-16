@@ -50,8 +50,9 @@ func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	messages, err := models.GetAllMessages() // Get all messages
 	if err != nil {
-		log.Printf("Error getting all messages: %v", err)
+		log.Printf("Error getting all messages for admin dashboard: %v", err)
 	}
+	log.Printf("Successfully loaded %d messages for admin dashboard.", len(messages))
 
 	log.Printf("Admin Dashboard Data: TotalUsers=%d, TotalThreads=%d, TotalMessages=%d, TotalCommunities=%d", totalUsers, totalThreads, totalMessages, totalCommunities)
 	log.Printf("Users data: %+v", users)
