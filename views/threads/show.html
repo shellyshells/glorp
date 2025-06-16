@@ -330,9 +330,6 @@
                                         </div>
                                         <span class="comment-score-inline">{{.Score}} points</span>
                                         <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
-                                        <span class="comment-reply-indicator">
-                                            <i class="fas fa-reply"></i> reply
-                                        </span>
                                     </div>
                                     
                                     <div class="comment-content">
@@ -350,13 +347,6 @@
                                             <i class="fas fa-share"></i> Share
                                         </button>
                                         
-                                        {{if and (.Replies) (gt (len .Replies) 0)}}
-                                            <button class="comment-action-btn toggle-replies-btn" onclick="toggleReplies('{{.ID}}')" data-expanded="true">
-                                                <i class="fas fa-chevron-up"></i>
-                                                <span class="toggle-text">Hide {{len .Replies}} {{if eq (len .Replies) 1}}reply{{else}}replies{{end}}</span>
-                                            </button>
-                                        {{end}}
-                                        
                                         {{if $.User}}
                                             {{if or (eq $.User.ID .AuthorID) (eq $.User.Role "admin")}}
                                             <button class="comment-action-btn danger" onclick="deleteComment('{{.ID}}')">
@@ -366,7 +356,7 @@
                                         {{end}}
                                     </div>
                                     
-                                    <!-- Reply form for nested comment -->
+                                    <!-- Reply form (hidden by default) -->
                                     {{if $.User}}
                                     <div class="reply-form" id="reply-form-{{.ID}}" style="display: none;">
                                         <div class="reply-form-header">
@@ -390,13 +380,12 @@
                                         </form>
                                     </div>
                                     {{end}}
-                                    
-                                    <!-- Nested replies for this reply -->
+
+                                    <!-- Nested Replies -->
                                     {{if .Replies}}
                                     <div class="nested-replies" id="replies-{{.ID}}">
                                         {{range .Replies}}
                                         <div class="comment-item nested-comment" data-comment-id="{{.ID}}" data-level="{{.Level}}">
-                                            <!-- Same structure as above, but with increased indentation -->
                                             <div class="comment-vote-section">
                                                 {{if $.User}}
                                                     <button class="comment-vote-btn {{if eq .UserVote 1}}upvoted{{end}}" onclick="voteComment('{{.ID}}', 1)">
@@ -463,31 +452,6 @@
                                                         {{end}}
                                                     {{end}}
                                                 </div>
-                                                
-                                                <!-- Reply form for deepest level -->
-                                                {{if $.User}}
-                                                <div class="reply-form" id="reply-form-{{.ID}}" style="display: none;">
-                                                    <div class="reply-form-header">
-                                                        <div class="reply-as-user">
-                                                            <div class="user-avatar-small {{getAvatarClass (getAvatarStyle $.User)}}">
-                                                                {{if $.User.AvatarURL}}
-                                                                    <img src="{{$.User.AvatarURL}}" alt="{{$.User.Username}}" class="avatar-img">
-                                                                {{else}}
-                                                                    <span class="avatar-initial">{{getUserInitial $.User}}</span>
-                                                                {{end}}
-                                                            </div>
-                                                            <span>Reply as <strong>u/{{$.User.Username}}</strong></span>
-                                                        </div>
-                                                    </div>
-                                                    <form onsubmit="submitReply(event, '{{.ID}}')">
-                                                        <textarea placeholder="What are your thoughts?" required></textarea>
-                                                        <div class="reply-form-actions">
-                                                            <button type="button" onclick="cancelReply('{{.ID}}')" class="btn btn-outline btn-sm">Cancel</button>
-                                                            <button type="submit" class="btn btn-primary btn-sm">Reply</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                                {{end}}
                                             </div>
                                         </div>
                                         {{end}}
@@ -532,711 +496,104 @@
     </div>
 </div>
 
-<!-- Image Modal -->
-<div id="image-modal" class="image-modal" style="display: none;" onclick="closeImageModal()">
-    <div class="image-modal-content">
-        <img id="modal-image" src="" alt="">
-        <button class="image-modal-close" onclick="closeImageModal()">&times;</button>
-    </div>
-</div>
-
-<!-- Share Modal -->
-<div id="share-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Share</h3>
-            <button class="modal-close" onclick="closeModal('share-modal')">&times;</button>
+<!-- Enhanced Share Modal -->
+<div id="share-modal" class="share-modal" style="display: none;">
+    <div class="share-modal-overlay" onclick="closeModal('share-modal')"></div>
+    <div class="share-modal-content">
+        <div class="share-modal-header">
+            <h3><i class="fas fa-share-alt"></i> Share Post</h3>
+            <button class="share-modal-close" onclick="closeModal('share-modal')">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div class="modal-body">
-            <div class="share-link">
-                <input type="text" id="share-link-input" readonly>
-                <button onclick="copyShareLink()">Copy</button>
+        
+        <div class="share-modal-body">
+            <!-- Link Sharing Section -->
+            <div class="share-section">
+                <h4><i class="fas fa-link"></i> Share Link</h4>
+                <div class="share-link-container">
+                    <input type="text" id="share-link-input" readonly placeholder="Loading...">
+                    <button onclick="copyShareLink()" class="copy-btn" title="Copy Link">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Social Media Sharing -->
+            <div class="share-section">
+                <h4><i class="fas fa-share-nodes"></i> Share on Social Media</h4>
+                <div class="social-share-grid">
+                    <button class="social-share-btn reddit" onclick="shareToReddit()">
+                        <i class="fab fa-reddit-alien"></i>
+                        <span>Reddit</span>
+                    </button>
+                    <button class="social-share-btn twitter" onclick="shareToTwitter()">
+                        <i class="fab fa-twitter"></i>
+                        <span>Twitter</span>
+                    </button>
+                    <button class="social-share-btn telegram" onclick="shareToTelegram()">
+                        <i class="fab fa-telegram"></i>
+                        <span>Telegram</span>
+                    </button>
+                    <button class="social-share-btn whatsapp" onclick="shareToWhatsApp()">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </button>
+                    <button class="social-share-btn facebook" onclick="shareToFacebook()">
+                        <i class="fab fa-facebook"></i>
+                        <span>Facebook</span>
+                    </button>
+                    <button class="social-share-btn discord" onclick="shareToDiscord()">
+                        <i class="fab fa-discord"></i>
+                        <span>Discord</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Cross-post Section -->
+            {{if .User}}
+            <div class="share-section">
+                <h4><i class="fas fa-arrows-alt"></i> Cross-post to Community</h4>
+                <div class="crosspost-container">
+                    <select id="crosspost-community" class="crosspost-select">
+                        <option value="">Select a community...</option>
+                        {{range .Communities}}
+                        <option value="{{.Name}}">z/{{.DisplayName}}</option>
+                        {{end}}
+                    </select>
+                    <button onclick="createCrossPost()" class="crosspost-btn">
+                        <i class="fas fa-plus"></i>
+                        Cross-post
+                    </button>
+                </div>
+                <small class="crosspost-note">
+                    <i class="fas fa-info-circle"></i>
+                    Cross-posting will create a new post in the selected community that links back to this original post
+                </small>
+            </div>
+            {{end}}
+            
+            <!-- QR Code Section -->
+            <div class="share-section qr-section">
+                <h4><i class="fas fa-qrcode"></i> QR Code</h4>
+                <div id="qr-code" class="qr-code-container" onclick="generateQRCode('{{.Thread.ID}}')">
+                    <div class="qr-placeholder-content">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Tap to Generate</span>
+                        <small>Click to generate QR code</small>
+                    </div>
+                </div>
+                <button onclick="downloadQR()" class="btn btn-secondary btn-sm mt-2">
+                    <i class="fas fa-download"></i> Download QR Code
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-// Image modal functions
-function openImageModal(imageSrc) {
-    const modal = document.getElementById('image-modal');
-    const modalImage = document.getElementById('modal-image');
-    modalImage.src = imageSrc;
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
+<script src="/static/js/app.js"></script>
+<script src="/static/js/show_threads.js"></script>
 
-function closeImageModal() {
-    const modal = document.getElementById('image-modal');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-// Close image modal with escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeImageModal();
-    }
-});
-
-// Post comment functionality
-document.getElementById('comment-form')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const content = formData.get('content');
-    const errorDiv = document.getElementById('comment-error');
-    const submitBtn = this.querySelector('button[type="submit"]');
-    
-    if (!content.trim()) {
-        errorDiv.textContent = 'Comment cannot be empty';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="loading-spinner"></span> Posting...';
-    
-    try {
-        const response = await fetch(`/api/threads/{{.Thread.ID}}/messages`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content })
-        });
-        
-        if (response.ok) {
-            location.reload();
-        } else {
-            const result = await response.text();
-            errorDiv.textContent = result;
-            errorDiv.style.display = 'block';
-        }
-    } catch (error) {
-        errorDiv.textContent = 'Failed to post comment. Please try again.';
-        errorDiv.style.display = 'block';
-        console.error('Error posting comment:', error);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-comment"></i> Comment';
-    }
-});
-
-// Vote comment functionality
-async function voteComment(commentId, voteType) {
-    try {
-        const response = await fetch(`/api/messages/${commentId}/vote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ vote_type: voteType })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
-            if (!commentElement) return;
-            
-            const scoreElements = commentElement.querySelectorAll('.comment-score');
-            const voteButtons = commentElement.querySelectorAll('.comment-vote-btn');
-            
-            scoreElements.forEach(el => el.textContent = result.score);
-            const scoreInline = commentElement.querySelector('.comment-score-inline');
-            if (scoreInline) {
-                scoreInline.textContent = `${result.score} points`;
-            }
-            
-            const upvoteBtn = voteButtons[0];
-            const downvoteBtn = voteButtons[1];
-            
-            if (upvoteBtn && downvoteBtn) {
-                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
-                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
-            }
-            
-            if (window.Glorp) {
-                const action = result.user_vote === voteType ? 
-                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                Glorp.showNotification(`Comment ${action}!`, 'success');
-            }
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error voting:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to vote. Please try again.', 'error');
-        }
-    }
-}
-
-// Vote thread functionality
-async function voteThread(threadId, voteType) {
-    try {
-        const response = await fetch(`/api/threads/${threadId}/vote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ vote_type: voteType })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            
-            // Update the vote display
-            const scoreElement = document.getElementById('thread-score');
-            const upvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:first-child');
-            const downvoteBtn = document.querySelector('.thread-vote-section .vote-arrow:last-child');
-            
-            if (scoreElement && upvoteBtn && downvoteBtn) {
-                // Update score
-                scoreElement.textContent = result.score;
-                scoreElement.dataset.score = result.score;
-                
-                // Update button states
-                upvoteBtn.classList.toggle('upvoted', result.user_vote === 1);
-                downvoteBtn.classList.toggle('downvoted', result.user_vote === -1);
-            }
-            
-            if (window.Glorp) {
-                const action = result.user_vote === voteType ? 
-                    (voteType === 1 ? 'upvoted' : 'downvoted') : 'removed vote';
-                Glorp.showNotification(`Post ${action}!`, 'success');
-            }
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error voting on thread:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to vote. Please try again.', 'error');
-        }
-    }
-}
-
-// Delete comment functionality
-async function deleteComment(commentId) {
-    if (!confirm('Are you sure you want to delete this comment?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/messages/${commentId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            location.reload(); // Refresh to remove deleted comment
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error deleting comment:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to delete comment. Please try again.', 'error');
-        }
-    }
-}
-
-// Delete thread functionality
-async function deleteThread(threadId) {
-    if (!confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/threads/${threadId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            if (window.Glorp) {
-                Glorp.showNotification('Thread deleted successfully', 'success');
-            }
-            setTimeout(() => {
-                window.location.href = '/'; // Redirect to home
-            }, 1000);
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error deleting thread:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to delete thread. Please try again.', 'error');
-        }
-    }
-}
-
-// Toggle reply form
-function toggleReplyForm(commentId) {
-    const replyForm = document.getElementById(`reply-form-${commentId}`);
-    const isVisible = replyForm.style.display !== 'none';
-    
-    // Hide all other reply forms first
-    document.querySelectorAll('.reply-form').forEach(form => {
-        form.style.display = 'none';
-    });
-    
-    if (!isVisible) {
-        replyForm.style.display = 'block';
-        replyForm.querySelector('textarea').focus();
-    }
-}
-
-function cancelReply(commentId) {
-    const replyForm = document.getElementById(`reply-form-${commentId}`);
-    replyForm.style.display = 'none';
-    replyForm.querySelector('textarea').value = '';
-}
-
-// Submit nested reply
-async function submitReply(event, parentCommentId) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const textarea = form.querySelector('textarea');
-    const content = textarea.value.trim();
-    
-    if (!content) {
-        if (window.Glorp) {
-            Glorp.showNotification('Reply cannot be empty', 'error');
-        }
-        return;
-    }
-    
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="loading-spinner"></span> Posting...';
-    
-    try {
-        const response = await fetch(`/api/threads/{{.Thread.ID}}/messages`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                content: content,
-                parent_id: parseInt(parentCommentId)
-            })
-        });
-        
-        if (response.ok) {
-            // Reload page to show new reply
-            location.reload();
-        } else {
-            const result = await response.text();
-            if (window.Glorp) {
-                Glorp.showNotification(result, 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error posting reply:', error);
-        if (window.Glorp) {
-            Glorp.showNotification('Failed to post reply. Please try again.', 'error');
-        }
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    }
-}
-
-// Toggle replies visibility
-function toggleReplies(commentId) {
-    const repliesContainer = document.getElementById(`replies-${commentId}`);
-    const toggleBtn = document.querySelector(`[onclick="toggleReplies('${commentId}')"]`);
-    
-    if (!repliesContainer || !toggleBtn) return;
-    
-    const toggleText = toggleBtn.querySelector('.toggle-text');
-    const toggleIcon = toggleBtn.querySelector('i');
-    const isExpanded = toggleBtn.dataset.expanded === 'true';
-    
-    if (isExpanded) {
-        // Collapse replies
-        repliesContainer.style.display = 'none';
-        toggleBtn.dataset.expanded = 'false';
-        const replyCount = repliesContainer.children.length;
-        toggleText.textContent = `Show ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
-        toggleIcon.className = 'fas fa-chevron-down';
-    } else {
-        // Expand replies
-        repliesContainer.style.display = 'block';
-        toggleBtn.dataset.expanded = 'true';
-        const replyCount = repliesContainer.children.length;
-        toggleText.textContent = `Hide ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
-        toggleIcon.className = 'fas fa-chevron-up';
-    }
-}
-
-// Share functionality
-function shareThread(threadId) {
-    const shareUrl = `${window.location.origin}/threads/${threadId}`;
-    document.getElementById('share-link-input').value = shareUrl;
-    document.getElementById('share-modal').style.display = 'flex';
-}
-
-function shareComment(commentId) {
-    const shareUrl = `${window.location.href}#comment-${commentId}`;
-    document.getElementById('share-link-input').value = shareUrl;
-    document.getElementById('share-modal').style.display = 'flex';
-}
-
-function copyShareLink() {
-    const input = document.getElementById('share-link-input');
-    input.select();
-    input.setSelectionRange(0, 99999);
-    document.execCommand('copy');
-    
-    if (window.Glorp) {
-        Glorp.showNotification('Link copied to clipboard!', 'success');
-    }
-    closeModal('share-modal');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-// Save functionality
-function saveThread(threadId) {
-    if (window.Glorp) {
-        Glorp.showNotification('Save feature coming soon!', 'info');
-    }
-}
-
-// Sort functionality
-function updateSort(sortBy) {
-    const url = new URL(window.location);
-    url.searchParams.set('sort', sortBy);
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-// Auto-resize textarea
-const textarea = document.querySelector('#comment-content');
-if (textarea) {
-    textarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.max(80, this.scrollHeight) + 'px';
-    });
-}
-
-// Helper functions for template
-function sub(a, b) { return a - b; }
-function add(a, b) { return a + b; }
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('share-modal');
-    if (e.target === modal) {
-        closeModal('share-modal');
-    }
-});
-</script>
-
-<style>
-/* Enhanced comment styles */
-.comment-item {
-    display: flex;
-    gap: 12px;
-    background: white;
-    padding: 16px 20px;
-    border-bottom: 1px solid #edeff1;
-    position: relative;
-}
-
-.nested-comment {
-    margin-left: 20px;
-    border-left: 2px solid #0079d3;
-    padding-left: 12px;
-    background: #fafafa;
-}
-
-.nested-comment .nested-comment {
-    margin-left: 16px;
-    background: #f5f5f5;
-}
-
-.nested-comment .nested-comment .nested-comment {
-    margin-left: 12px;
-    background: #f0f0f0;
-}
-
-.comment-vote-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 32px;
-}
-
-.comment-vote-btn {
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: #878a8c;
-    transition: all 0.2s;
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-}
-
-.comment-vote-btn:hover {
-    background: #f6f7f8;
-    color: #1a1a1b;
-}
-
-.comment-vote-btn.upvoted {
-    color: #ff4500;
-    background: rgba(255, 69, 0, 0.1);
-}
-
-.comment-vote-btn.downvoted {
-    color: #7193ff;
-    background: rgba(113, 147, 255, 0.1);
-}
-
-.comment-score {
-    font-size: 12px;
-    font-weight: 700;
-    color: #878a8c;
-}
-
-.comment-content-section {
-    flex: 1;
-}
-
-.comment-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: #878a8c;
-    flex-wrap: wrap;
-}
-
-.comment-author-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.comment-author {
-    font-weight: 700;
-    color: #0079d3;
-    text-decoration: none;
-}
-
-.comment-author:hover {
-    text-decoration: underline;
-}
-
-.comment-reply-indicator {
-    color: #878a8c;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.comment-content {
-    margin-bottom: 12px;
-}
-
-.comment-content p {
-    margin: 0;
-    color: #1a1a1b;
-    line-height: 1.5;
-    word-wrap: break-word;
-}
-
-.comment-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 12px;
-    margin-bottom: 8px;
-}
-
-.comment-action-btn {
-    background: none;
-    border: none;
-    color: #878a8c;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 2px;
-    transition: all 0.2s;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.comment-action-btn:hover {
-    background: #f6f7f8;
-    color: #1a1a1b;
-}
-
-.comment-action-btn.danger:hover {
-    background: #ffebee;
-    color: #d32f2f;
-}
-
-.toggle-replies-btn {
-    font-weight: 700;
-}
-
-.reply-form {
-    margin-top: 12px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 4px;
-    border: 1px solid #edeff1;
-}
-
-.reply-form-header {
-    margin-bottom: 8px;
-}
-
-.reply-as-user {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #878a8c;
-}
-
-.reply-form textarea {
-    width: 100%;
-    min-height: 60px;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 14px;
-    margin-bottom: 8px;
-}
-
-.reply-form textarea:focus {
-    outline: none;
-    border-color: #0079d3;
-    box-shadow: 0 0 0 2px rgba(0,121,211,0.2);
-}
-
-.reply-form-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
-
-.nested-replies {
-    margin-top: 8px;
-}
-
-.nested-replies .nested-replies {
-    margin-top: 4px;
-}
-
-.nested-replies .nested-replies .nested-replies {
-    margin-top: 2px;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .nested-comment {
-        margin-left: 12px;
-        padding-left: 8px;
-    }
-    
-    .comment-vote-section {
-        flex-direction: row;
-        justify-content: center;
-        min-width: unset;
-        padding: 8px;
-        margin-bottom: 8px;
-    }
-    
-    .comment-score {
-        margin: 0 8px;
-    }
-}
-
-/* Thread vote section styles */
-.thread-vote-section .vote-arrow.upvoted {
-    color: #ff4500;
-    background: rgba(255, 69, 0, 0.1);
-}
-
-.thread-vote-section .vote-arrow.downvoted {
-    color: #7193ff;
-    background: rgba(113, 147, 255, 0.1);
-}
-
-/* Loading spinner */
-.loading-spinner {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid currentColor;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.thread-image-container {
-    margin: 16px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #edeff1;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-height: 400px; /* Slightly larger for individual thread view */
-}
-
-.thread-image {
-    max-width: 100%;
-    max-height: 400px;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    cursor: zoom-in;
-    transition: all 0.2s ease;
-}
-
-.thread-image:hover {
-    transform: scale(1.02);
-}
-</style>
+<link rel="stylesheet" href="/static/css/show_threads.css">
+<link rel="icon" href="/static/images/cat_icon.png" type="image/x-icon">
 {{end}}
