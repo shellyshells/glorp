@@ -273,23 +273,16 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 	` + baseQuery + whereClause
 
 	// Add sorting based on filter type
-	switch filters.Filter {
+	switch filters.SortBy {
 	case "popular":
-		selectQuery += " ORDER BY c.member_count DESC"
-	case "recent":
+		// Hot algorithm: member_count / (age in hours + 2)^1.8
+		selectQuery += " ORDER BY (c.member_count + 1) / POW((julianday('now') - julianday(c.created_at)) * 24 + 2, 1.8) DESC"
+	case "top":
+		selectQuery += " ORDER BY c.member_count DESC, c.created_at DESC"
+	case "new":
 		selectQuery += " ORDER BY c.created_at DESC"
-	default:
-		// Use the regular sort options
-		switch filters.SortBy {
-		case "members":
-			selectQuery += " ORDER BY c.member_count DESC"
-		case "created":
-			selectQuery += " ORDER BY c.created_at DESC"
-		case "name":
-			selectQuery += " ORDER BY c.display_name ASC"
-		default:
-			selectQuery += " ORDER BY c.member_count DESC, c.created_at DESC"
-		}
+	default: // date or popularity
+		selectQuery += " ORDER BY c.created_at DESC"
 	}
 
 	// Add pagination

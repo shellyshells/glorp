@@ -102,6 +102,7 @@ func CommunityViewHandler(w http.ResponseWriter, r *http.Request) {
 		Page:        1,
 		Limit:       25,
 		UserID:      userID,
+		SortBy:      r.URL.Query().Get("sort"),
 	}
 
 	threads, totalThreads, err := models.GetThreadsByCommunity(threadFilters)
