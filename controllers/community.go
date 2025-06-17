@@ -500,3 +500,37 @@ func ManageModeratorHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Moderator status updated successfully",
 	})
 }
+
+// Get community API
+func GetCommunityHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	communityID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid community ID", http.StatusBadRequest)
+		return
+	}
+
+	user := middleware.GetUserFromContext(r)
+	if user == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	community, err := models.GetCommunityByID(communityID, user.ID)
+	if err != nil {
+		http.Error(w, "Community not found", http.StatusNotFound)
+		return
+	}
+
+	// Check if user can view this community
+	if community.Visibility == "private" && community.UserRole == "" {
+		http.Error(w, "This community is private. You need to be a member to view it.", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":   true,
+		"community": community,
+	})
+}

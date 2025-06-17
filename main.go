@@ -52,25 +52,23 @@ func main() {
 	homeRoutes.HandleFunc("/", controllers.HomeHandler).Methods("GET")
 	homeRoutes.HandleFunc("/threads/{id:[0-9]+}", controllers.ShowThreadHandler).Methods("GET")
 
-	// Community routes (with optional auth)
-	homeRoutes.HandleFunc("/communities", controllers.CommunityListHandler).Methods("GET")
-	homeRoutes.HandleFunc("/z/{name}", controllers.CommunityViewHandler).Methods("GET")
+	// Community routes (with auth required)
+	protected := r.PathPrefix("").Subrouter()
+	protected.Use(middleware.AuthMiddleware)
+	protected.HandleFunc("/communities", controllers.CommunityListHandler).Methods("GET")
+	protected.HandleFunc("/z/{name}", controllers.CommunityViewHandler).Methods("GET")
+	protected.HandleFunc("/communities/create", controllers.CreateCommunityViewHandler).Methods("GET")
+	protected.HandleFunc("/z/{name}/manage", controllers.CommunityManageHandler).Methods("GET")
 
 	// Public auth routes (no middleware)
 	r.HandleFunc("/register", controllers.RegisterViewHandler).Methods("GET")
 	r.HandleFunc("/login", controllers.LoginViewHandler).Methods("GET")
 
 	// Protected view routes
-	protected := r.PathPrefix("").Subrouter()
-	protected.Use(middleware.AuthMiddleware)
 	protected.HandleFunc("/threads/create", controllers.CreateThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/threads/{id:[0-9]+}/edit", controllers.EditThreadViewHandler).Methods("GET")
 	protected.HandleFunc("/profile", controllers.ProfileHandler).Methods("GET")
 	protected.HandleFunc("/settings", controllers.SettingsHandler).Methods("GET")
-
-	// Protected community routes
-	protected.HandleFunc("/communities/create", controllers.CreateCommunityViewHandler).Methods("GET")
-	protected.HandleFunc("/z/{name}/manage", controllers.CommunityManageHandler).Methods("GET")
 
 	// User profile routes - these need to be accessible to view other users' profiles
 	userRoutes := r.PathPrefix("/user").Subrouter()
@@ -88,7 +86,6 @@ func main() {
 	// Public API routes
 	api.HandleFunc("/threads", controllers.GetThreadsHandler).Methods("GET")
 	api.HandleFunc("/search", controllers.SearchHandler).Methods("GET")
-	api.HandleFunc("/communities", controllers.GetCommunitiesHandler).Methods("GET")
 
 	// Auth API routes (no middleware required)
 	api.HandleFunc("/register", controllers.RegisterHandler).Methods("POST")
@@ -111,6 +108,8 @@ func main() {
 	apiProtected.HandleFunc("/messages/{id:[0-9]+}/vote", controllers.VoteMessageHandler).Methods("POST")
 
 	// Community API
+	apiProtected.HandleFunc("/communities", controllers.GetCommunitiesHandler).Methods("GET")
+	apiProtected.HandleFunc("/communities/{id:[0-9]+}", controllers.GetCommunityHandler).Methods("GET")
 	apiProtected.HandleFunc("/communities", controllers.CreateCommunityHandler).Methods("POST")
 	apiProtected.HandleFunc("/communities/{id:[0-9]+}", controllers.UpdateCommunityHandler).Methods("PUT")
 	apiProtected.HandleFunc("/communities/{id:[0-9]+}/join", controllers.JoinCommunityHandler).Methods("POST")

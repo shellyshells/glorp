@@ -223,7 +223,11 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 	baseQuery := `
 		FROM communities c 
 		LEFT JOIN users u ON c.creator_id = u.id
+		LEFT JOIN community_memberships cm ON c.id = cm.community_id AND cm.user_id = ?
 	`
+
+	// Add userID to args for the LEFT JOIN
+	args = append(args, filters.UserID)
 
 	// Build WHERE conditions
 	if filters.Search != "" {
@@ -248,17 +252,16 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 			args = append(args, filters.UserID)
 		}
 	case "popular":
-		// No additional WHERE conditions needed, will be handled by ORDER BY
-	case "recent":
-		// No additional WHERE conditions needed, will be handled by ORDER BY
+		// No additional conditions needed, will sort by member_count
 	}
 
+	// Build the complete query
 	whereClause := ""
 	if len(whereConditions) > 0 {
 		whereClause = "WHERE " + strings.Join(whereConditions, " AND ")
 	}
 
-	// Count total
+	// Get total count
 	countQuery := "SELECT COUNT(*) " + baseQuery + whereClause
 	var total int
 	err := config.DB.QueryRow(countQuery, args...).Scan(&total)
@@ -266,38 +269,32 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 		return nil, 0, err
 	}
 
-	// Main query
-	selectQuery := `
-		SELECT c.id, c.name, c.display_name, c.description, c.creator_id, c.visibility, 
-		       c.join_approval, c.member_count, c.created_at, c.updated_at, u.username
-	` + baseQuery + whereClause
+	// Get communities with pagination
+	query := `
+		SELECT c.id, c.name, c.display_name, c.description, c.creator_id, 
+		       c.visibility, c.join_approval, c.member_count, c.created_at, 
+		       c.updated_at, u.username, cm.role, cm.status
+		` + baseQuery + whereClause
 
-	// Add sorting based on filter type
+	// Add sorting
 	switch filters.SortBy {
-	case "popular":
-		// Hot algorithm: member_count / (age in hours + 2)^1.8
-		selectQuery += " ORDER BY (c.member_count + 1) / POW((julianday('now') - julianday(c.created_at)) * 24 + 2, 1.8) DESC"
-	case "top":
-		selectQuery += " ORDER BY c.member_count DESC, c.created_at DESC"
-	case "new":
-		selectQuery += " ORDER BY c.created_at DESC"
-	default: // date or popularity
-		selectQuery += " ORDER BY c.created_at DESC"
+	case "name":
+		query += " ORDER BY c.name ASC"
+	case "members":
+		query += " ORDER BY c.member_count DESC"
+	case "newest":
+		query += " ORDER BY c.created_at DESC"
+	default:
+		query += " ORDER BY c.created_at DESC"
 	}
 
 	// Add pagination
 	if filters.Limit > 0 {
-		selectQuery += " LIMIT ?"
-		args = append(args, filters.Limit)
-
-		if filters.Page > 0 {
-			offset := (filters.Page - 1) * filters.Limit
-			selectQuery += " OFFSET ?"
-			args = append(args, offset)
-		}
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, filters.Limit, (filters.Page-1)*filters.Limit)
 	}
 
-	rows, err := config.DB.Query(selectQuery, args...)
+	rows, err := config.DB.Query(query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -306,19 +303,34 @@ func GetCommunities(filters CommunityFilters) ([]Community, int, error) {
 	for rows.Next() {
 		var community Community
 		var creatorUsername string
+		var role, status sql.NullString
 
 		err := rows.Scan(
 			&community.ID, &community.Name, &community.DisplayName, &community.Description,
 			&community.CreatorID, &community.Visibility, &community.JoinApproval,
-			&community.MemberCount, &community.CreatedAt, &community.UpdatedAt, &creatorUsername,
-		)
+			&community.MemberCount, &community.CreatedAt, &community.UpdatedAt,
+			&creatorUsername, &role, &status)
+
 		if err != nil {
-			continue
+			return nil, 0, err
 		}
 
 		community.Creator = &User{
 			ID:       community.CreatorID,
 			Username: creatorUsername,
+		}
+
+		if role.Valid {
+			community.UserRole = role.String
+			community.UserStatus = status.String
+		}
+
+		// Check if user has pending join request
+		if filters.UserID > 0 {
+			var requestCount int
+			requestQuery := `SELECT COUNT(*) FROM community_join_requests WHERE community_id = ? AND user_id = ? AND status = 'pending'`
+			config.DB.QueryRow(requestQuery, community.ID, filters.UserID).Scan(&requestCount)
+			community.JoinRequested = requestCount > 0
 		}
 
 		communities = append(communities, community)
@@ -623,6 +635,12 @@ func DeleteCommunity(communityID int) error {
 	}
 	defer tx.Rollback()
 
+	// First, set community_id to NULL for all threads
+	_, err = tx.Exec("UPDATE threads SET community_id = NULL WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
 	// Delete community memberships
 	_, err = tx.Exec("DELETE FROM community_memberships WHERE community_id = ?", communityID)
 	if err != nil {
@@ -637,37 +655,6 @@ func DeleteCommunity(communityID int) error {
 
 	// Delete community rules
 	_, err = tx.Exec("DELETE FROM community_rules WHERE community_id = ?", communityID)
-	if err != nil {
-		return err
-	}
-
-	// Delete community threads and their associated content
-	_, err = tx.Exec(`
-		DELETE FROM thread_votes WHERE thread_id IN (SELECT id FROM threads WHERE community_id = ?)
-	`, communityID)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(`
-		DELETE FROM message_votes WHERE message_id IN (
-			SELECT m.id FROM messages m 
-			JOIN threads t ON m.thread_id = t.id 
-			WHERE t.community_id = ?
-		)
-	`, communityID)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(`
-		DELETE FROM messages WHERE thread_id IN (SELECT id FROM threads WHERE community_id = ?)
-	`, communityID)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec("DELETE FROM threads WHERE community_id = ?", communityID)
 	if err != nil {
 		return err
 	}

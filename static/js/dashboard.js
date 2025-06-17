@@ -147,14 +147,26 @@ async function deleteCommunity(communityId) {
 
     try {
         const response = await fetch(`/api/admin/communities/${communityId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
         });
 
         if (response.ok) {
             location.reload();
         } else {
-            const result = await response.text();
-            alert('Failed to delete community: ' + result);
+            const error = await response.text();
+            if (response.status === 401) {
+                alert('Please log in to perform this action.');
+                window.location.href = '/login';
+            } else if (response.status === 403) {
+                alert('Access denied: Admin privileges required');
+            } else {
+                alert('Failed to delete community: ' + error);
+            }
         }
     } catch (error) {
         alert('Failed to delete community. Please try again.');
