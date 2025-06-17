@@ -45,6 +45,15 @@
                                 {{end}}
                             </div>
                             <a href="/user/{{.Thread.Author.Username}}" class="user-link">u/{{.Thread.Author.Username}}</a>
+                            {{if .Thread.Author.Role}}
+                                <span class="member-badge member-{{.Thread.Author.Role}}">
+                                    {{if eq .Thread.Author.Role "creator"}}<i class="fas fa-crown"></i>{{end}}
+                                    {{if eq .Thread.Author.Role "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                                    {{if eq .Thread.Author.Role "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                                    {{if eq .Thread.Author.Role "op"}}<i class="fas fa-star"></i>{{end}}
+                                    {{title .Thread.Author.Role}}
+                                </span>
+                            {{end}}
                         </div>
                     </span>
                     <span>•</span>
@@ -223,6 +232,15 @@
                                     {{end}}
                                 </div>
                                 <a href="/user/{{.Author.Username}}" class="comment-author">u/{{.Author.Username}}</a>
+                                {{if .Author.Role}}
+                                    <span class="member-badge member-{{.Author.Role}}">
+                                        {{if eq .Author.Role "creator"}}<i class="fas fa-crown"></i>{{end}}
+                                        {{if eq .Author.Role "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                                        {{if eq .Author.Role "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                                        {{if eq .Author.Role "op"}}<i class="fas fa-star"></i>{{end}}
+                                        {{title .Author.Role}}
+                                    </span>
+                                {{end}}
                             </div>
                             <span class="comment-score-inline">{{.Score}} points</span>
                             <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
@@ -327,6 +345,15 @@
                                                 {{end}}
                                             </div>
                                             <a href="/user/{{.Author.Username}}" class="comment-author">u/{{.Author.Username}}</a>
+                                            {{if .Author.Role}}
+                                                <span class="member-badge member-{{.Author.Role}}">
+                                                    {{if eq .Author.Role "creator"}}<i class="fas fa-crown"></i>{{end}}
+                                                    {{if eq .Author.Role "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                                                    {{if eq .Author.Role "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                                                    {{if eq .Author.Role "op"}}<i class="fas fa-star"></i>{{end}}
+                                                    {{title .Author.Role}}
+                                                </span>
+                                            {{end}}
                                         </div>
                                         <span class="comment-score-inline">{{.Score}} points</span>
                                         <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>
@@ -424,6 +451,15 @@
                                                             {{end}}
                                                         </div>
                                                         <a href="/user/{{.Author.Username}}" class="comment-author">u/{{.Author.Username}}</a>
+                                                        {{if .Author.Role}}
+                                                            <span class="member-badge member-{{.Author.Role}}">
+                                                                {{if eq .Author.Role "creator"}}<i class="fas fa-crown"></i>{{end}}
+                                                                {{if eq .Author.Role "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                                                                {{if eq .Author.Role "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                                                                {{if eq .Author.Role "op"}}<i class="fas fa-star"></i>{{end}}
+                                                                {{title .Author.Role}}
+                                                            </span>
+                                                        {{end}}
                                                     </div>
                                                     <span class="comment-score-inline">{{.Score}} points</span>
                                                     <span class="comment-time" title="{{.CreatedAt.Format "Jan 02, 2006 15:04:05"}}">{{timeAgo .CreatedAt}}</span>

@@ -124,7 +124,7 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 		userID = user.ID
 	}
 
-	thread, err := models.GetThreadByIDWithUser(threadID, userID)
+	thread, err := models.GetThreadByIDWithUserAndCommunity(threadID, userID)
 	if err != nil {
 		http.Error(w, "Thread not found", http.StatusNotFound)
 		return
@@ -157,7 +157,17 @@ func ShowThreadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to load messages", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Successfully loaded %d messages for thread %d", len(messages), threadID)
+
+	// Get user roles for the community if thread belongs to a community
+	if thread.CommunityID != nil {
+		if user != nil {
+			// Get user's role in the community
+			userRole, err := models.GetUserCommunityRole(*thread.CommunityID, user.ID)
+			if err == nil {
+				user.Role = userRole
+			}
+		}
+	}
 
 	pagination := utils.CalculatePagination(totalMessages, page, limit)
 

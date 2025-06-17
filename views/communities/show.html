@@ -60,7 +60,12 @@
                     {{if .Community.UserRole}}
                         <div class="member-status">
                             <span class="member-badge member-{{.Community.UserRole}}">
-                                <i class="fas fa-check"></i> {{title .Community.UserRole}}
+                                {{if eq .Community.UserRole "creator"}}<i class="fas fa-crown"></i>{{end}}
+                                {{if eq .Community.UserRole "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                                {{if eq .Community.UserRole "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                                {{if eq .Community.UserRole "op"}}<i class="fas fa-star"></i>{{end}}
+                                {{if eq .Community.UserRole "member"}}<i class="fas fa-user"></i>{{end}}
+                                {{title .Community.UserRole}}
                             </span>
                             {{if ne .Community.UserRole "creator"}}
                                 <button class="btn btn-outline btn-sm" onclick="leaveCommunity('{{.Community.ID}}')">
@@ -377,7 +382,14 @@
     </div>
 </div>
 
-<script src ="/static/js/show_communities.js"></script>
+<script>
+    // Pass community data to JavaScript
+    const communityData = {
+        id: {{.Community.ID}},
+        joinApproval: "{{.Community.JoinApproval}}"
+    };
+</script>
+<script src="/static/js/show_communities.js"></script>
 <link rel="stylesheet" href="/static/css/show_communities.css">
 <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
 

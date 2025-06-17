@@ -167,18 +167,23 @@
 }
 
 .member-creator {
-    background: #d4edda;
-    color: #155724;
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    color: #000;
 }
 
 .member-admin {
-    background: #C8E6C9;
-    color: #1B5E20;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
 }
 
 .member-moderator {
-    background: #fff3cd;
-    color: #856404;
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    color: white;
+}
+
+.member-op {
+    background: linear-gradient(135deg, #2196F3, #03A9F4);
+    color: white;
 }
 
 .member-member {

@@ -88,8 +88,13 @@
                 {{if $.User}}
                 <div class="community-actions" onclick="event.stopPropagation()">
                     {{if .UserRole}}
-                        <span class="member-badge">
-                            <i class="fas fa-check"></i> {{title .UserRole}}
+                        <span class="member-badge member-{{.UserRole}}">
+                            {{if eq .UserRole "creator"}}<i class="fas fa-crown"></i>{{end}}
+                            {{if eq .UserRole "admin"}}<i class="fas fa-shield-alt"></i>{{end}}
+                            {{if eq .UserRole "moderator"}}<i class="fas fa-gavel"></i>{{end}}
+                            {{if eq .UserRole "op"}}<i class="fas fa-star"></i>{{end}}
+                            {{if eq .UserRole "member"}}<i class="fas fa-user"></i>{{end}}
+                            {{title .UserRole}}
                         </span>
                     {{else}}
                         <button class="btn btn-sm btn-outline" onclick="joinCommunity('{{.ID}}')">
@@ -141,6 +146,19 @@
     {{end}}
 </div>
 
+<script>
+    // Pass community data to JavaScript
+    const communityData = {
+        communities: [
+            {{range .Communities}}
+            {
+                id: {{.ID}},
+                joinApproval: "{{.JoinApproval}}"
+            },
+            {{end}}
+        ]
+    };
+</script>
 <script src="/static/js/index_communities.js"></script>
 <link rel="stylesheet" href="/static/css/index_communities.css">
 <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">

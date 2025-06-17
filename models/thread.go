@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"strings"
 	"time"
 
@@ -500,7 +499,9 @@ func GetThreadByIDWithUserAndCommunity(id, userID int) (*Thread, error) {
 	thread := &Thread{}
 	query := `SELECT t.id, t.title, t.description, t.author_id, t.community_id, t.status, 
 			         t.post_type, COALESCE(t.image_url, '') as image_url, COALESCE(t.link_url, '') as link_url,
-			         t.created_at, t.updated_at, u.username, c.name as community_name, c.display_name as community_display_name,
+			         t.created_at, t.updated_at, u.username, u.role as author_role,
+			         COALESCE(c.id, 0) as community_id_val, COALESCE(c.name, '') as community_name, 
+			         COALESCE(c.display_name, '') as community_display_name,
 					 COUNT(DISTINCT m.id) as message_count,
 					 COALESCE(SUM(CASE WHEN tv.vote_type = 1 THEN 1 ELSE 0 END), 0) as upvotes,
 					 COALESCE(SUM(CASE WHEN tv.vote_type = -1 THEN 1 ELSE 0 END), 0) as downvotes,
@@ -513,12 +514,14 @@ func GetThreadByIDWithUserAndCommunity(id, userID int) (*Thread, error) {
 			  WHERE t.id = ?
 			  GROUP BY t.id`
 
-	var authorUsername, communityName, communityDisplayName sql.NullString
-	var communityID sql.NullInt64
+	var authorUsername, authorRole string
+	var communityID, communityIDVal int
+	var communityName, communityDisplayName string
 	err := config.DB.QueryRow(query, id).Scan(
 		&thread.ID, &thread.Title, &thread.Description, &thread.AuthorID, &communityID,
 		&thread.Status, &thread.PostType, &thread.ImageURL, &thread.LinkURL,
-		&thread.CreatedAt, &thread.UpdatedAt, &authorUsername, &communityName, &communityDisplayName,
+		&thread.CreatedAt, &thread.UpdatedAt, &authorUsername, &authorRole,
+		&communityIDVal, &communityName, &communityDisplayName,
 		&thread.MessageCount, &thread.Upvotes, &thread.Downvotes, &thread.Score,
 	)
 
@@ -528,17 +531,17 @@ func GetThreadByIDWithUserAndCommunity(id, userID int) (*Thread, error) {
 
 	thread.Author = &User{
 		ID:       thread.AuthorID,
-		Username: authorUsername.String,
+		Username: authorUsername,
+		Role:     authorRole,
 	}
 
 	// Set community info if thread belongs to a community
-	if communityID.Valid {
-		thread.CommunityID = new(int)
-		*thread.CommunityID = int(communityID.Int64)
+	if communityIDVal > 0 {
+		thread.CommunityID = &communityIDVal
 		thread.Community = &Community{
-			ID:          int(communityID.Int64),
-			Name:        communityName.String,
-			DisplayName: communityDisplayName.String,
+			ID:          communityIDVal,
+			Name:        communityName,
+			DisplayName: communityDisplayName,
 		}
 	}
 

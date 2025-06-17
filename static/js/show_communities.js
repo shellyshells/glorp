@@ -268,7 +268,7 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
 async function joinCommunity(communityId) {
     let message = '';
     
-    if ('{{.Community.JoinApproval}}' === 'approval_required') {
+    if (communityData.joinApproval === 'approval_required') {
         message = prompt('Please provide a message with your join request (optional):') || '';
     }
     

@@ -10,22 +10,37 @@ function updateFilter(type, value) {
 }
 
 async function joinCommunity(communityId) {
+    const community = communityData.communities.find(c => c.id === parseInt(communityId));
+    let message = '';
+    
+    if (community && community.joinApproval === 'approval_required') {
+        message = prompt('Please provide a message with your join request (optional):') || '';
+    }
+    
     try {
         const response = await fetch(`/api/communities/${communityId}/join`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({})
+            body: JSON.stringify({ message: message })
         });
         
         if (response.ok) {
             location.reload();
         } else {
             const result = await response.text();
-            alert('Failed to join community: ' + result);
+            if (window.Glorp) {
+                Glorp.showNotification(result, 'error');
+            } else {
+                alert('Failed to join community: ' + result);
+            }
         }
     } catch (error) {
-        alert('Failed to join community. Please try again.');
+        if (window.Glorp) {
+            Glorp.showNotification('Failed to join community. Please try again.', 'error');
+        } else {
+            alert('Failed to join community. Please try again.');
+        }
     }
 }

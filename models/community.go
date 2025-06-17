@@ -617,7 +617,6 @@ func UpdateCommunity(communityID int, name, description string) error {
 
 // DeleteCommunity deletes a community and all its associated data
 func DeleteCommunity(communityID int) error {
-	// Start a transaction
 	tx, err := config.DB.Begin()
 	if err != nil {
 		return err
@@ -642,19 +641,43 @@ func DeleteCommunity(communityID int) error {
 		return err
 	}
 
-	// Update threads to remove community association
-	_, err = tx.Exec("UPDATE threads SET community_id = NULL WHERE community_id = ?", communityID)
+	// Delete community threads and their associated content
+	_, err = tx.Exec(`
+		DELETE FROM thread_votes WHERE thread_id IN (SELECT id FROM threads WHERE community_id = ?)
+	`, communityID)
 	if err != nil {
 		return err
 	}
 
-	// Finally, delete the community
+	_, err = tx.Exec(`
+		DELETE FROM message_votes WHERE message_id IN (
+			SELECT m.id FROM messages m 
+			JOIN threads t ON m.thread_id = t.id 
+			WHERE t.community_id = ?
+		)
+	`, communityID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM messages WHERE thread_id IN (SELECT id FROM threads WHERE community_id = ?)
+	`, communityID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM threads WHERE community_id = ?", communityID)
+	if err != nil {
+		return err
+	}
+
+	// Finally, delete the community itself
 	_, err = tx.Exec("DELETE FROM communities WHERE id = ?", communityID)
 	if err != nil {
 		return err
 	}
 
-	// Commit the transaction
 	return tx.Commit()
 }
 
@@ -695,4 +718,17 @@ func TransferCommunityOwnership(communityID, newOwnerID int) error {
 
 	// Commit the transaction
 	return tx.Commit()
+}
+
+func GetUserCommunityRole(communityID, userID int) (string, error) {
+	var role string
+	query := `SELECT role FROM community_memberships WHERE community_id = ? AND user_id = ?`
+	err := config.DB.QueryRow(query, communityID, userID).Scan(&role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+	return role, nil
 }

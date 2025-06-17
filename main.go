@@ -135,6 +135,8 @@ func main() {
 	apiAdmin.HandleFunc("/users/{id:[0-9]+}", controllers.DeleteUserHandler).Methods("DELETE")
 	apiAdmin.HandleFunc("/messages/{id:[0-9]+}", controllers.DeleteMessageHandler).Methods("DELETE")
 	apiAdmin.HandleFunc("/messages/{id:[0-9]+}", controllers.EditMessageHandler).Methods("PUT")
+	apiAdmin.HandleFunc("/communities/{id:[0-9]+}", controllers.DeleteCommunityHandler).Methods("DELETE")
+	apiAdmin.HandleFunc("/communities/{id:[0-9]+}", controllers.UpdateCommunityHandler).Methods("PUT")
 
 	// Add error handling middleware
 	r.Use(errorHandler)

@@ -10,7 +10,7 @@ document.getElementById('communitySettingsForm').addEventListener('submit', asyn
     };
     
     try {
-        const response = await fetch(`/api/communities/{{.Community.ID}}`, {
+        const response = await fetch(`/api/communities/${communityData.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ document.getElementById('communitySettingsForm').addEventListener('submit', asyn
 // Update moderator role
 async function updateModeratorRole(userId, role) {
     try {
-        const response = await fetch(`/api/communities/{{.Community.ID}}/moderators/${userId}`, {
+        const response = await fetch(`/api/communities/${communityData.id}/moderators/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ async function removeModerator(userId) {
     }
     
     try {
-        const response = await fetch(`/api/communities/{{.Community.ID}}/moderators/${userId}`, {
+        const response = await fetch(`/api/communities/${communityData.id}/moderators/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="manage-community-container">
+<div class="manage-community-container" data-community-id="{{.Community.ID}}">
     <div class="manage-header">
         <h1>Manage z/{{.Community.DisplayName}}</h1>
         <div class="community-badges">
@@ -134,6 +134,17 @@
     </div>
 </div>
 
+<script>
+    // Pass community data to JavaScript
+    const communityData = {
+        id: {{.Community.ID}},
+        name: "{{.Community.Name}}",
+        displayName: "{{.Community.DisplayName}}",
+        description: "{{.Community.Description}}",
+        visibility: "{{.Community.Visibility}}",
+        joinApproval: "{{.Community.JoinApproval}}"
+    };
+</script>
 <script src="/static/js/manage.js"></script>
 <link rel="stylesheet" href="/static/css/manage.css">
 <link rel="icon" href="/static/images/icon.ico" type="image/x-icon">
